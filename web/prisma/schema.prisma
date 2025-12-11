@@ -1,0 +1,138 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+        
+
+model User {
+  id             String     @id @default(uuid())
+  name           String?
+  email          String     @unique
+  emailVerified  DateTime?
+  hashedPassword String?
+  role           UserRole   @default(USER)
+  reviews        Review[]
+  businesses     Business[] @relation("OwnerBusinesses")
+  favorites      Favorite[]
+  claims         Claim[]
+  reports        Report[]   @relation("ReporterReports")
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+}
+
+enum UserRole {
+  USER
+  OWNER
+  ADMIN
+}
+
+model Category {
+  id          String      @id @default(uuid())
+  name        String
+  slug        String      @unique
+  businesses  Business[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Business {
+  id          String      @id @default(uuid())
+  name        String
+  description String?
+  address     String?
+  city        String?     @default("Lubumbashi")
+  phone       String?
+  website     String?
+  categoryId  String
+  ownerId     String?
+  reviews     Review[]
+  favorites   Favorite[]
+  claims      Claim[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  category Category @relation(fields: [categoryId], references: [id])
+  owner    User?    @relation("OwnerBusinesses", fields: [ownerId], references: [id])
+
+  @@index([categoryId])
+  @@index([ownerId])
+}
+
+model Review {
+  id         String    @id @default(uuid())
+  rating     Int
+  comment    String
+  userId     String
+  businessId String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+  reports  Report[]
+
+  @@index([businessId])
+  @@index([userId])
+}
+
+model Favorite {
+  userId     String
+  businessId String
+  createdAt  DateTime @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  business Business @relation(fields: [businessId], references: [id])
+
+  @@id([userId, businessId])
+}
+
+model Claim {
+  id         String      @id @default(uuid())
+  status     ClaimStatus @default(PENDING)
+  message    String?
+  businessId String
+  userId     String
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  business Business @relation(fields: [businessId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([businessId])
+  @@index([userId])
+}
+
+enum ClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Report {
+  id         String       @id @default(uuid())
+  reason     String
+  details    String?
+  reviewId   String
+  reporterId String
+  status     ReportStatus @default(PENDING)
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  review   Review @relation(fields: [reviewId], references: [id])
+  reporter User   @relation("ReporterReports", fields: [reporterId], references: [id])
+
+  @@index([reviewId])
+  @@index([reporterId])
+}
+
+enum ReportStatus {
+  PENDING
+  RESOLVED
+  DISMISSED
+}
