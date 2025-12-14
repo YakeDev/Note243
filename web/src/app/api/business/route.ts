@@ -1,10 +1,35 @@
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { businessSchema } from "@/lib/validators/business";
 
-export async function GET() {
+// GET /api/business?search=&categoryId=
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get("search") ?? undefined;
+    const categoryId = searchParams.get("categoryId") ?? undefined;
+    const status = searchParams.get("status") ?? "ACTIVE";
+
+    const where =
+      search || categoryId || status
+        ? {
+            ...(status ? { status: status as any } : {}),
+            ...(categoryId ? { categoryId } : {}),
+            ...(search
+              ? {
+                  OR: [
+                    { name: { contains: search, mode: "insensitive" } },
+                    { description: { contains: search, mode: "insensitive" } },
+                    { city: { contains: search, mode: "insensitive" } },
+                  ],
+                }
+              : {}),
+          }
+        : undefined;
+
     const businesses = await prisma.business.findMany({
+      where,
       include: {
         category: { select: { id: true, name: true, slug: true } },
         owner: { select: { id: true, name: true, email: true } },
@@ -13,9 +38,9 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json({ data: businesses });
+    return NextResponse.json({ data: businesses }, { status: 200 });
   } catch (error) {
-    console.error("Failed to fetch businesses", error);
+    console.error("GET /api/business error:", error);
     return NextResponse.json(
       { message: "Erreur lors du chargement des etablissements" },
       { status: 500 },
@@ -23,22 +48,37 @@ export async function GET() {
   }
 }
 
+// POST /api/business
 export async function POST(request: Request) {
-  const body = await request.json().catch(() => null);
-  const parsed = businessSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 400 });
-  }
-
   try {
-    const business = await prisma.business.create({ data: parsed.data });
-    return NextResponse.json(
-      { data: business, message: "Etablissement cree avec succes" },
-      { status: 201 },
-    );
+    const session = await auth();
+
+    if (!session?.user?.role) {
+      return NextResponse.json({ message: "Non autorise" }, { status: 401 });
+    }
+    if (session.user.role !== "ADMIN" && session.user.role !== "OWNER") {
+      return NextResponse.json({ message: "Non autorise" }, { status: 403 });
+    }
+
+    const body = await request.json().catch(() => null);
+    const parsed = businessSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { message: "Validation error", errors: parsed.error.flatten().fieldErrors },
+        { status: 400 },
+      );
+    }
+
+    const payload = { ...parsed.data };
+    if (session.user.role === "OWNER") {
+      payload.ownerId = session.user.id;
+    }
+
+    const business = await prisma.business.create({ data: payload });
+    return NextResponse.json({ data: business, message: "Etablissement cree avec succes" }, { status: 201 });
   } catch (error) {
-    console.error("Failed to create business", error);
+    console.error("POST /api/business error:", error);
     return NextResponse.json(
       { message: "Erreur lors de la creation de l'etablissement" },
       { status: 500 },

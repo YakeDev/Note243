@@ -1,15 +1,3 @@
-import { NextResponse } from "next/server";
+import { handlers } from "@/auth";
 
-export async function GET() {
-  return NextResponse.json(
-    { message: "NextAuth non configuré. Ajouter les providers avant usage." },
-    { status: 501 },
-  );
-}
-
-export async function POST() {
-  return NextResponse.json(
-    { message: "NextAuth non configuré. Ajouter les providers avant usage." },
-    { status: 501 },
-  );
-}
+export const { GET, POST } = handlers;

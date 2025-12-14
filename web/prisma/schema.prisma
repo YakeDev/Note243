@@ -5,8 +5,6 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
 }
         
 
@@ -17,11 +15,18 @@ model User {
   emailVerified  DateTime?
   hashedPassword String?
   role           UserRole   @default(USER)
+  status         UserStatus @default(ACTIVE)
+  accounts       Account[]
+  sessions       Session[]
   reviews        Review[]
   businesses     Business[] @relation("OwnerBusinesses")
   favorites      Favorite[]
   claims         Claim[]
   reports        Report[]   @relation("ReporterReports")
+  emailTokens    EmailVerificationToken[]
+  suggestionsSubmitted BusinessSuggestion[] @relation("SubmittedSuggestions")
+  suggestionsReviewed  BusinessSuggestion[] @relation("ReviewedSuggestions")
+  claimsReviewed       Claim[]              @relation("ClaimReviewedBy")
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 }
@@ -32,11 +37,22 @@ enum UserRole {
   ADMIN
 }
 
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+}
+
 model Category {
   id          String      @id @default(uuid())
   name        String
   slug        String      @unique
+  description String?
+  icon        String?
+  parentId    String?
+  parent      Category?   @relation("CategoryToCategory", fields: [parentId], references: [id])
+  children    Category[]  @relation("CategoryToCategory")
   businesses  Business[]
+  suggestions BusinessSuggestion[]
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 }
@@ -51,6 +67,8 @@ model Business {
   website     String?
   categoryId  String
   ownerId     String?
+  status      BusinessStatus @default(ACTIVE)
+  images      BusinessImage[]
   reviews     Review[]
   favorites   Favorite[]
   claims      Claim[]
@@ -64,12 +82,36 @@ model Business {
   @@index([ownerId])
 }
 
+enum BusinessStatus {
+  PENDING_REVIEW
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  REJECTED
+  CERTIFIED
+}
+
+model BusinessImage {
+  id         String   @id @default(uuid())
+  businessId String
+  url        String
+  path       String
+  isCover    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([isCover])
+}
+
 model Review {
   id         String    @id @default(uuid())
   rating     Int
   comment    String
   userId     String
   businessId String
+  status     ReviewStatus @default(PUBLISHED)
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
@@ -79,6 +121,12 @@ model Review {
 
   @@index([businessId])
   @@index([userId])
+}
+
+enum ReviewStatus {
+  PUBLISHED
+  HIDDEN
+  REMOVED
 }
 
 model Favorite {
@@ -98,14 +146,21 @@ model Claim {
   message    String?
   businessId String
   userId     String
+  proofUrl   String?
+  notes      String?
+  reviewedAt DateTime?
+  reviewedById String?
+  rejectReason String?
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
 
   business Business @relation(fields: [businessId], references: [id])
   user     User     @relation(fields: [userId], references: [id])
+  reviewedBy User?  @relation("ClaimReviewedBy", fields: [reviewedById], references: [id])
 
   @@index([businessId])
   @@index([userId])
+  @@index([reviewedById])
 }
 
 enum ClaimStatus {
@@ -135,4 +190,81 @@ enum ReportStatus {
   PENDING
   RESOLVED
   DISMISSED
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model BusinessSuggestion {
+  id            String                    @id @default(uuid())
+  name          String
+  categoryId    String
+  location      String?
+  phone         String?
+  website       String?
+  status        BusinessSuggestionStatus  @default(PENDING)
+  submittedById String
+  reviewedById  String?
+  reviewedAt    DateTime?
+  rejectReason  String?
+  createdAt     DateTime                  @default(now())
+
+  category    Category @relation(fields: [categoryId], references: [id])
+  submittedBy User     @relation("SubmittedSuggestions", fields: [submittedById], references: [id])
+  reviewedBy  User?    @relation("ReviewedSuggestions", fields: [reviewedById], references: [id])
+
+  @@index([categoryId])
+  @@index([submittedById])
+  @@index([reviewedById])
+}
+
+enum BusinessSuggestionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// NextAuth models
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
 }

@@ -1,7 +1,10 @@
+﻿export const dynamic = 'force-dynamic';
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Providers } from "@/components/Providers";
 import { Header } from "@/components/Header";
+import { Footer } from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -16,7 +19,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Note243 | Avis clients Lubumbashi",
   description:
-    "Plateforme d'avis clients pour les établissements de Lubumbashi (inspiré Trustpilot / Google Reviews).",
+    "Plateforme d'avis clients pour les Ã©tablissements de Lubumbashi (inspirÃ© Trustpilot / Google Reviews).",
 };
 
 export default function RootLayout({
@@ -27,9 +30,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <Header />
-        <main className="min-h-screen bg-slate-50">{children}</main>
+        <Providers>
+          <Header />
+          <main className="min-h-screen bg-slate-50">{children}</main>
+          <Footer />
+        </Providers>
       </body>
     </html>
   );
 }
+
+
+

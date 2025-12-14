@@ -1,5 +1,6 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { businessSchema } from "@/lib/validators/business";
 
@@ -32,6 +33,12 @@ export async function GET(_: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const session = await auth();
+
+  if (!session?.user?.role) {
+    return NextResponse.json({ message: "Non autorise" }, { status: 401 });
+  }
+
   const body = await request.json().catch(() => null);
   const parsed = businessSchema.partial().safeParse(body);
 
@@ -40,9 +47,26 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   try {
+    const existing = await prisma.business.findUnique({ where: { id: params.id } });
+    if (!existing) {
+      return NextResponse.json({ message: "Business not found" }, { status: 404 });
+    }
+
+    const isAdmin = session.user.role === "ADMIN";
+    const isOwner = session.user.role === "OWNER" && existing.ownerId === session.user.id;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json({ message: "Non autorise" }, { status: 403 });
+    }
+
+    const data = parsed.data;
+    if (session.user.role === "OWNER") {
+      data.ownerId = session.user.id;
+    }
+
     const updated = await prisma.business.update({
       where: { id: params.id },
-      data: parsed.data,
+      data,
       include: businessInclude,
     });
 
@@ -53,6 +77,21 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     console.error("Failed to update business", error);
+    return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
+  }
+}
+
+export async function DELETE(_: Request, { params }: Params) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") {
+    return NextResponse.json({ message: "Non autorise" }, { status: 401 });
+  }
+
+  try {
+    await prisma.business.delete({ where: { id: params.id } });
+    return NextResponse.json({ message: "Business supprimé" });
+  } catch (error) {
+    console.error("Failed to delete business", error);
     return NextResponse.json({ message: "Erreur serveur" }, { status: 500 });
   }
 }

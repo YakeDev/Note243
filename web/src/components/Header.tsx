@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { auth } from "@/auth";
+import { UserMenu } from "./UserMenu";
 
-export function Header() {
+export async function Header() {
+  const session = await auth();
+  const user = session?.user;
+
   return (
     <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-14 w-full max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -18,12 +23,16 @@ export function Header() {
             Écrire un avis
           </Link>
         </nav>
-        <Link
-          href="/auth"
-          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-        >
-          Connexion
-        </Link>
+        {user ? (
+          <UserMenu user={user} />
+        ) : (
+          <Link
+            href="/auth/login"
+            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
+          >
+            Connexion
+          </Link>
+        )}
       </div>
     </header>
   );
