@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 export function UploadBusinessImages({ businessId }: { businessId: string }) {
   const [files, setFiles] = useState<FileList | null>(null);
