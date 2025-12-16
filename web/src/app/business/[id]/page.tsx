@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReviewStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { BusinessReviews } from "@/components/BusinessReviews";
 import {
   CheckCircleIcon,
   GlobeAltIcon,
@@ -26,19 +27,6 @@ function Stars({ value, className = "" }: { value: number; className?: string })
       ))}
     </span>
   );
-}
-
-function formatRelativeDate(date: Date) {
-  const diffMs = Date.now() - date.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays < 1) return "Aujourd'hui";
-  if (diffDays === 1) return "Il y a 1 jour";
-  if (diffDays < 30) return `Il y a ${diffDays} jours`;
-  const diffMonths = Math.floor(diffDays / 30);
-  if (diffMonths === 1) return "Il y a 1 mois";
-  if (diffMonths < 12) return `Il y a ${diffMonths} mois`;
-  const diffYears = Math.floor(diffMonths / 12);
-  return diffYears === 1 ? "Il y a 1 an" : `Il y a ${diffYears} ans`;
 }
 
 async function getBusiness(id?: string) {
@@ -96,6 +84,14 @@ export default async function BusinessPage({ params }: Props) {
   const mapEmbedUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`;
   const mapLink = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
   const isCertified = business.status === "CERTIFIED";
+  const reviews = business.reviews.map((review) => ({
+    id: review.id,
+    rating: review.rating,
+    comment: review.comment,
+    createdAt: review.createdAt.toISOString(),
+    userName: review.user?.name,
+    businessId: business.id,
+  }));
 
   return (
     <div className="bg-white">
@@ -278,67 +274,7 @@ export default async function BusinessPage({ params }: Props) {
           </aside>
         </div>
 
-        <section className="space-y-4">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-slate-900">Avis des utilisateurs</h2>
-              <p className="text-sm text-slate-600">
-                {stats.count} avis publiés · moyenne {stats.average.toFixed(1)}/5
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button className="rounded-full bg-primary px-4 py-2 text-xs font-semibold text-white shadow-sm">
-                Tous
-              </button>
-              <button className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">
-                Positifs
-              </button>
-              <button className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">
-                Négatifs
-              </button>
-              <button className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700">
-                Récents
-              </button>
-            </div>
-          </div>
-
-          {business.reviews.length === 0 ? (
-            <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-600">
-              Pas encore d'avis. Soyez le premier à partager votre expérience !
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {business.reviews.map((review) => (
-                <article
-                  key={review.id}
-                  className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-sm font-semibold text-slate-900">
-                        {review.user?.name ?? "Utilisateur"}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {formatRelativeDate(new Date(review.createdAt))}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Stars value={review.rating} />
-                      <span className="text-xs font-semibold text-slate-700">
-                        {review.rating.toFixed(1)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="mt-3 text-sm leading-6 text-slate-700">{review.comment}</p>
-                  <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-slate-500">
-                    <button className="hover:text-primary">Signaler</button>
-                    <button className="hover:text-primary">Répondre</button>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
+        <BusinessReviews reviews={reviews} summary={{ total: stats.count, average: stats.average }} />
       </main>
     </div>
   );
