@@ -68,14 +68,14 @@ export default async function Home() {
 
   return (
     <div className="bg-white">
-      <div className="bg-gradient-to-br from-blue-600 to-primary text-white">
-        <header className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-16 sm:px-6 lg:px-8">
+      <div className="bg-gradient-to-br from-blue-600 to-primary text-white ">
+        <header className="mx-auto flex max-w-6xl flex-col items-center text-center gap-4 px-4 py-28 sm:px-6 lg:px-8">
           <h1 className="text-3xl font-bold sm:text-4xl">
             Trouver les meilleurs services à Lubumbashi
           </h1>
           <p className="max-w-2xl text-sm text-white/90 sm:text-base">
-            Découvrez et évaluez les établissements locaux. Partagez vos expériences avec la
-            communauté.
+            Découvrez et évaluez les établissements locaux. Partagez vos
+            expériences avec la communauté.
           </p>
           <form
             action="/explorer"
@@ -99,11 +99,15 @@ export default async function Home() {
       </div>
 
       <main className="mx-auto max-w-6xl space-y-10 px-4 py-10 sm:px-6 lg:px-8">
-        <section className="space-y-4">
+        <section className="space-y-12">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Explorer par catégorie</h2>
-              <p className="text-sm text-slate-600">Trouvez rapidement un établissement par secteur.</p>
+              <h2 className="text-xl font-bold text-slate-900">
+                Explorer par catégorie
+              </h2>
+              <p className="text-sm text-slate-600">
+                Trouvez rapidement un établissement par secteur.
+              </p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -118,7 +122,9 @@ export default async function Home() {
                     {cat.icon || cat.name.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">{cat.name}</p>
+                    <p className="text-sm font-semibold text-slate-900">
+                      {cat.name}
+                    </p>
                   </div>
                 </div>
               </Link>
@@ -126,13 +132,20 @@ export default async function Home() {
           </div>
         </section>
 
-        <section className="space-y-4">
+        <section className="space-y-12">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Établissements populaires</h2>
-              <p className="text-sm text-slate-600">Les plus consultés cette semaine.</p>
+              <h2 className="text-xl font-bold text-slate-900">
+                Établissements populaires
+              </h2>
+              <p className="text-sm text-slate-600">
+                Les plus consultés cette semaine.
+              </p>
             </div>
-            <Link href="/explorer" className="text-sm font-semibold text-primary hover:underline">
+            <Link
+              href="/explorer"
+              className="text-sm font-semibold text-primary hover:underline"
+            >
               Voir tout →
             </Link>
           </div>
