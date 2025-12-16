@@ -20,6 +20,19 @@ function emailTemplate(verifyUrl: string) {
   </div>`;
 }
 
+function getBaseUrl(req: Request): string {
+  const envUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL;
+  if (envUrl) return envUrl;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+
+  try {
+    const { origin } = new URL(req.url);
+    return origin;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 export async function POST(request: Request) {
   try {
     // Rate limit basique par IP
@@ -73,7 +86,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const baseUrl = getBaseUrl(request);
     const verifyUrl = `${baseUrl}/auth/verify?token=${token}`;
 
     const transporter = nodemailer.createTransport({

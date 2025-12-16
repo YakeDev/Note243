@@ -13,7 +13,7 @@ interface BusinessCard {
 
 async function getBusinesses(search?: string): Promise<BusinessCard[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : "";
-  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+  const base = getBaseUrl();
   try {
     const res = await fetch(`${base}/api/business${qs}`, {
       cache: "no-store",
@@ -24,6 +24,12 @@ async function getBusinesses(search?: string): Promise<BusinessCard[]> {
   } catch {
     return [];
   }
+}
+
+function getBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
 }
 
 export default async function ExplorerPage({
