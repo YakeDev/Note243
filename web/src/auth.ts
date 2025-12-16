@@ -8,6 +8,12 @@ import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type Adapter } from "@auth/core/adapters";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { resolveAppUrl } from "@/lib/appUrls";
+
+const appUrl = resolveAppUrl();
+if (!process.env.NEXTAUTH_URL) {
+  process.env.NEXTAUTH_URL = appUrl;
+}
 
 export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma) as Adapter,

@@ -5,6 +5,7 @@ import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { registerSchema } from "@/lib/validators/auth";
 import { rateLimit } from "@/lib/rateLimiter";
+import { resolveAppUrl } from "@/lib/appUrls";
 
 const TOKEN_EXPIRES_HOURS = 24;
 
@@ -73,7 +74,7 @@ export async function POST(request: Request) {
       },
     });
 
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+    const baseUrl = resolveAppUrl({ url: request.url });
     const verifyUrl = `${baseUrl}/auth/verify?token=${token}`;
 
     const transporter = nodemailer.createTransport({
