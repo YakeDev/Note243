@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -9,24 +10,35 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") ?? undefined;
     const categoryId = searchParams.get("categoryId") ?? undefined;
-    const status = searchParams.get("status") ?? "ACTIVE";
+    const statusParam = searchParams.get("status");
+    const status = statusParam ? (statusParam as any) : undefined;
+    const q = search?.trim();
 
-    const where =
-      search || categoryId || status
+    let categoryIds: string[] | undefined;
+    if (categoryId) {
+      const children = await prisma.category.findMany({
+        where: { parentId: categoryId },
+        select: { id: true },
+      });
+      categoryIds = [categoryId, ...children.map((c) => c.id)];
+    }
+
+    const where: Prisma.BusinessWhereInput =
+      q || categoryId || status
         ? {
-            ...(status ? { status: status as any } : {}),
-            ...(categoryId ? { categoryId } : {}),
-            ...(search
+            ...(status ? { status } : {}),
+            ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
+            ...(q
               ? {
                   OR: [
-                    { name: { contains: search, mode: "insensitive" } },
-                    { description: { contains: search, mode: "insensitive" } },
-                    { city: { contains: search, mode: "insensitive" } },
+                    { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+                    { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
+                    { city: { contains: q, mode: Prisma.QueryMode.insensitive } },
                   ],
                 }
               : {}),
           }
-        : undefined;
+        : {};
 
     const businesses = await prisma.business.findMany({
       where,

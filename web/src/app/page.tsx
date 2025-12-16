@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { StarIcon, MapPinIcon } from "@/components/icons";
 
+export const dynamic = "force-dynamic";
+
 interface BusinessCard {
   id: string;
   name: string;
@@ -34,8 +36,9 @@ function Stars({ value }: { value: number }) {
 }
 
 async function getBusinesses(): Promise<BusinessCard[]> {
+  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   try {
-    const res = await fetch("/api/business", {
+    const res = await fetch(`${base}/api/business`, {
       cache: "no-store",
     });
     if (!res.ok) return [];

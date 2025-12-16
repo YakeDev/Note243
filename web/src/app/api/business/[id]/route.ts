@@ -4,9 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { businessSchema } from "@/lib/validators/business";
 
-interface Params {
-  params: { id: string };
-}
+type Params = { params: Promise<{ id: string }> };
 
 const businessInclude = {
   category: { select: { id: true, name: true, slug: true } },
@@ -16,8 +14,9 @@ const businessInclude = {
 
 export async function GET(_: Request, { params }: Params) {
   try {
+    const { id } = await params;
     const business = await prisma.business.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: businessInclude,
     });
 
@@ -47,7 +46,8 @@ export async function PATCH(request: Request, { params }: Params) {
   }
 
   try {
-    const existing = await prisma.business.findUnique({ where: { id: params.id } });
+    const { id } = await params;
+    const existing = await prisma.business.findUnique({ where: { id } });
     if (!existing) {
       return NextResponse.json({ message: "Business not found" }, { status: 404 });
     }
@@ -65,7 +65,7 @@ export async function PATCH(request: Request, { params }: Params) {
     }
 
     const updated = await prisma.business.update({
-      where: { id: params.id },
+      where: { id },
       data,
       include: businessInclude,
     });
@@ -88,7 +88,8 @@ export async function DELETE(_: Request, { params }: Params) {
   }
 
   try {
-    await prisma.business.delete({ where: { id: params.id } });
+    const { id } = await params;
+    await prisma.business.delete({ where: { id } });
     return NextResponse.json({ message: "Business supprimé" });
   } catch (error) {
     console.error("Failed to delete business", error);

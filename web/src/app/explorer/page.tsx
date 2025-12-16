@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 interface BusinessCard {
   id: string;
   name: string;
@@ -11,8 +13,9 @@ interface BusinessCard {
 
 async function getBusinesses(search?: string): Promise<BusinessCard[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : "";
+  const base = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
   try {
-    const res = await fetch(`/api/business${qs}`, {
+    const res = await fetch(`${base}/api/business${qs}`, {
       cache: "no-store",
     });
     if (!res.ok) return [];

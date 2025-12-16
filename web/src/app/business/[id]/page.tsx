@@ -1,7 +1,9 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { StarIcon, MapPinIcon, PhoneIcon, GlobeAltIcon, CheckCircleIcon } from "@/components/icons";
+
+type Props = { params: Promise<{ id: string }> };
 
 function Stars({ value }: { value: number }) {
   const filled = Math.round(value);
@@ -19,11 +21,12 @@ function Stars({ value }: { value: number }) {
   );
 }
 
-async function getBusiness(id: string) {
+async function getBusiness(id?: string) {
+  if (!id) return null;
   return prisma.business.findUnique({
     where: { id },
     include: {
-      category: { select: { id: true, name: true } },
+      category: { select: { id: true, name: true, slug: true } },
       owner: { select: { id: true, name: true } },
       reviews: {
         take: 10,
@@ -35,8 +38,11 @@ async function getBusiness(id: string) {
   });
 }
 
-export default async function BusinessPage({ params }: { params: { id: string } }) {
-  const business = await getBusiness(params.id);
+export default async function BusinessPage({ params }: Props) {
+  const { id } = await params;
+  if (!id) return notFound();
+
+  const business = await getBusiness(id);
   if (!business) return notFound();
 
   const avg =

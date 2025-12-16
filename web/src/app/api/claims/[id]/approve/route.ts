@@ -4,15 +4,17 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   _req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Acces refuse" }, { status: 401 });
   }
 
+  const { id } = await params;
+
   const claim = await prisma.claim.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
 
   if (!claim) return NextResponse.json({ error: "Revendication introuvable" }, { status: 404 });
@@ -22,7 +24,7 @@ export async function POST(
 
   const result = await prisma.$transaction(async (tx) => {
     const updatedClaim = await tx.claim.update({
-      where: { id: params.id },
+      where: { id },
       data: {
         status: "APPROVED",
         reviewedAt: new Date(),

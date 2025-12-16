@@ -9,7 +9,7 @@ const schema = z.object({
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
   if (!session?.user || session.user.role !== "ADMIN") {
@@ -22,8 +22,10 @@ export async function POST(
     return NextResponse.json({ error: "Donnees invalides" }, { status: 400 });
   }
 
+  const { id } = await params;
+
   const claim = await prisma.claim.findUnique({
-    where: { id: params.id },
+    where: { id },
   });
   if (!claim) return NextResponse.json({ error: "Revendication introuvable" }, { status: 404 });
   if (claim.status !== "PENDING") {
@@ -31,7 +33,7 @@ export async function POST(
   }
 
   await prisma.claim.update({
-    where: { id: params.id },
+    where: { id },
     data: {
       status: "REJECTED",
       reviewedAt: new Date(),

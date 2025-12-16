@@ -3,17 +3,22 @@ import { z } from "zod";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 
+export const runtime = "nodejs";
+
 const schema = z.object({
   reason: z.string().max(500).optional(),
 });
 
 export async function POST(
   req: Request,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
-    return NextResponse.json({ error: "Acces refuse" }, { status: 401 });
+  if (!session?.user) {
+    return NextResponse.json({ error: "Non authentifie" }, { status: 401 });
+  }
+  if (session.user.role !== "ADMIN") {
+    return NextResponse.json({ error: "Acces refuse" }, { status: 403 });
   }
 
   const body = await req.json().catch(() => null);
@@ -22,8 +27,11 @@ export async function POST(
     return NextResponse.json({ error: "Donnees invalides" }, { status: 400 });
   }
 
+  const { id: suggestionId } = await params;
+  if (!suggestionId) return NextResponse.json({ error: "ID manquant" }, { status: 400 });
+
   const suggestion = await prisma.businessSuggestion.findUnique({
-    where: { id: params.id },
+    where: { id: suggestionId },
   });
   if (!suggestion) return NextResponse.json({ error: "Suggestion introuvable" }, { status: 404 });
 
@@ -32,7 +40,7 @@ export async function POST(
   }
 
   await prisma.businessSuggestion.update({
-    where: { id: params.id },
+    where: { id: suggestionId },
     data: {
       status: "REJECTED",
       reviewedAt: new Date(),

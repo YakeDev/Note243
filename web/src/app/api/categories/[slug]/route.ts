@@ -1,11 +1,15 @@
+import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/slugify";
 import { categoryUpdateSchema } from "@/lib/validators/category";
 
+type Params = { params: Promise<{ slug: string }> };
+
 // GET category by slug + businesses filters
-export async function GET(request: Request, { params }: { params: { slug: string } }) {
+export async function GET(request: Request, { params }: Params) {
+  const { slug } = await params;
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? undefined;
   const ratingParam = searchParams.get("rating");
@@ -14,16 +18,16 @@ export async function GET(request: Request, { params }: { params: { slug: string
   const city = searchParams.get("city") ?? undefined;
   const sort = searchParams.get("sort") ?? "recent"; // popularity | rating | recent
 
-  const whereBusiness = {
+  const whereBusiness: Prisma.BusinessWhereInput = {
     ...(search
       ? {
           OR: [
-            { name: { contains: search, mode: "insensitive" } },
-            { description: { contains: search, mode: "insensitive" } },
+            { name: { contains: search, mode: Prisma.QueryMode.insensitive } },
+            { description: { contains: search, mode: Prisma.QueryMode.insensitive } },
           ],
         }
       : {}),
-    ...(city ? { city: { contains: city, mode: "insensitive" } } : {}),
+    ...(city ? { city: { contains: city, mode: Prisma.QueryMode.insensitive } } : {}),
     ...(hasRating
       ? {
           reviews: {
@@ -36,7 +40,7 @@ export async function GET(request: Request, { params }: { params: { slug: string
   };
 
   const category = await prisma.category.findUnique({
-    where: { slug: params.slug },
+    where: { slug },
     select: {
       id: true,
       name: true,
@@ -84,12 +88,13 @@ export async function GET(request: Request, { params }: { params: { slug: string
 }
 
 // PATCH/DELETE admin only
-export async function PATCH(request: Request, { params }: { params: { slug: string } }) {
+export async function PATCH(request: Request, { params }: Params) {
   const session = await auth();
   if (!session?.user?.role || session.user.role !== "ADMIN") {
     return NextResponse.json({ message: "Non autorisé" }, { status: 401 });
   }
 
+  const { slug } = await params;
   const body = await request.json().catch(() => null);
   const parsed = categoryUpdateSchema.safeParse(body);
   if (!parsed.success) {
@@ -98,10 +103,10 @@ export async function PATCH(request: Request, { params }: { params: { slug: stri
 
   try {
     const payload = parsed.data;
-    const slug = payload.slug ? slugify(payload.slug) : undefined;
+    const newSlug = payload.slug ? slugify(payload.slug) : undefined;
     const updated = await prisma.category.update({
-      where: { slug: params.slug },
-      data: { ...payload, ...(slug ? { slug } : {}) },
+      where: { slug },
+      data: { ...payload, ...(newSlug ? { slug: newSlug } : {}) },
       select: { id: true, name: true, slug: true, description: true, icon: true, parentId: true },
     });
     return NextResponse.json({ data: updated });
@@ -117,14 +122,16 @@ export async function PATCH(request: Request, { params }: { params: { slug: stri
   }
 }
 
-export async function DELETE(_: Request, { params }: { params: { slug: string } }) {
+export async function DELETE(_: Request, { params }: Params) {
   const session = await auth();
   if (!session?.user?.role || session.user.role !== "ADMIN") {
     return NextResponse.json({ message: "Non autorisé" }, { status: 401 });
   }
 
+  const { slug } = await params;
+
   try {
-    const count = await prisma.business.count({ where: { category: { slug: params.slug } } });
+    const count = await prisma.business.count({ where: { category: { slug } } });
     if (count > 0) {
       return NextResponse.json(
         { message: "Impossible de supprimer : catégorie associée à des établissements" },
@@ -132,7 +139,7 @@ export async function DELETE(_: Request, { params }: { params: { slug: string } 
       );
     }
 
-    await prisma.category.delete({ where: { slug: params.slug } });
+    await prisma.category.delete({ where: { slug } });
     return NextResponse.json({ message: "Catégorie supprimée" });
   } catch (error: any) {
     if (error.code === "P2025") {

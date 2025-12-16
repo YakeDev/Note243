@@ -8,6 +8,7 @@ export {
   ArrowRightCircleIcon,
   BoltIcon,
   BookOpenIcon,
+  BanknotesIcon,
   BriefcaseIcon,
   BuildingStorefrontIcon,
   BuildingOffice2Icon,

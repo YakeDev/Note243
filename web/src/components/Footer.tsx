@@ -44,7 +44,7 @@ export function Footer() {
                 Souscrire
               </button>
             </div>
-            <p className="text-xs text-white/70">© 2025 Note243 A/S. Tous droits réservés.</p>
+            <p className="text-xs text-white/70">© 2025 Note243. Tous droits réservés.</p>
           </div>
         </div>
       </div>
