@@ -1,3 +1,4 @@
+import type { ComponentType, SVGProps } from "react";
 import Link from "next/link";
 import { Prisma, ReviewStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -55,7 +56,7 @@ type RecentReview = {
 const MAX_TEXT_LENGTH = 120;
 const BUSINESS_LIMIT = 12;
 
-type IconComponent = (props: { className?: string }) => JSX.Element;
+type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { title?: string; titleId?: string }>;
 
 const iconMap: Record<string, IconComponent> = {
   ShoppingBagIcon,
@@ -94,9 +95,9 @@ function parseSearchParams(
   const category = sanitizeText(safeParams.category);
   const city = sanitizeText(safeParams.city);
 
-  const minRatingRaw = Array.isArray(searchParams.minRating)
-    ? searchParams.minRating[0]
-    : searchParams.minRating;
+  const minRatingRaw = Array.isArray(safeParams.minRating)
+    ? safeParams.minRating[0]
+    : safeParams.minRating;
 
   let minRating: number | null = null;
   if (minRatingRaw) {
