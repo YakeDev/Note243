@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "prisma:push": "prisma db push",
     "prisma:studio": "prisma studio",
-    "seed:categories": "node prisma/seedCategories.js",
+    "seed:categories": "node prisma/seedCategories.mjs",
     "test": "npm run lint",
     "verify": "npm run lint"
   },

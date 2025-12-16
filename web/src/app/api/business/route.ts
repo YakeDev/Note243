@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { BusinessStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -8,11 +8,15 @@ import { businessSchema } from "@/lib/validators/business";
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const search = searchParams.get("search") ?? undefined;
-    const categoryId = searchParams.get("categoryId") ?? undefined;
+    const searchRaw = searchParams.get("search")?.trim();
+    const search = searchRaw && searchRaw.length > 0 ? searchRaw : undefined;
+    const categoryIdRaw = searchParams.get("categoryId")?.trim();
+    const categoryId = categoryIdRaw && categoryIdRaw.length > 0 ? categoryIdRaw : undefined;
     const statusParam = searchParams.get("status");
-    const status = statusParam ? (statusParam as any) : undefined;
-    const q = search?.trim();
+    const status = statusParam && Object.values(BusinessStatus).includes(statusParam as BusinessStatus)
+      ? (statusParam as BusinessStatus)
+      : undefined;
+    const q = search;
 
     let categoryIds: string[] | undefined;
     if (categoryId) {
@@ -23,22 +27,19 @@ export async function GET(request: Request) {
       categoryIds = [categoryId, ...children.map((c) => c.id)];
     }
 
-    const where: Prisma.BusinessWhereInput =
-      q || categoryId || status
+    const where: Prisma.BusinessWhereInput = {
+      ...(status ? { status } : {}),
+      ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
+      ...(q
         ? {
-            ...(status ? { status } : {}),
-            ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
-            ...(q
-              ? {
-                  OR: [
-                    { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
-                    { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
-                    { city: { contains: q, mode: Prisma.QueryMode.insensitive } },
-                  ],
-                }
-              : {}),
+            OR: [
+              { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
+              { city: { contains: q, mode: Prisma.QueryMode.insensitive } },
+            ],
           }
-        : {};
+        : {}),
+    };
 
     const businesses = await prisma.business.findMany({
       where,

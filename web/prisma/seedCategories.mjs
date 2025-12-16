@@ -1,8 +1,9 @@
-/* eslint-disable no-console */
-require("dotenv").config({ path: "./.env" });
-const { PrismaClient } = require("@prisma/client");
-const { PrismaPg } = require("@prisma/adapter-pg");
-const { Pool } = require("pg");
+import dotenv from "dotenv";
+import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+
+dotenv.config({ path: "./.env" });
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -18,29 +19,29 @@ const categories = [
   {
     name: "Aliments, boissons & tabac",
     subs: [
-      "Boulangeries & pâtisseries",
-      "Épiceries & supermarchés",
-      "Bars & cafés",
+      "Boulangeries & pÇ½tisseries",
+      "Ç%piceries & supermarchÇ¸s",
+      "Bars & cafÇ¸s",
       "Restaurants",
       "Vins & spiritueux",
-      "Traiteurs & événementiel",
+      "Traiteurs & Ç¸vÇ¸nementiel",
     ],
   },
   {
-    name: "Électronique & technologie",
+    name: "Ç%lectronique & technologie",
     subs: [
-      "Ordinateurs & périphériques",
-      "Téléphones & tablettes",
-      "Audio & vidéo",
-      "Électroménager",
+      "Ordinateurs & pÇ¸riphÇ¸riques",
+      "TÇ¸lÇ¸phones & tablettes",
+      "Audio & vidÇ¸o",
+      "Ç%lectromÇ¸nager",
       "Jeux & consoles",
     ],
   },
   {
-    name: "Santé & médecine",
+    name: "SantÇ¸ & mÇ¸decine",
     subs: [
-      "Cliniques & hôpitaux",
-      "Médecins & spécialistes",
+      "Cliniques & hÇïpitaux",
+      "MÇ¸decins & spÇ¸cialistes",
       "Pharmacies",
       "Opticiens & audition",
       "Laboratoires",
@@ -49,7 +50,7 @@ const categories = [
   {
     name: "Services publics & locaux",
     subs: [
-      "Écoles & formation",
+      "Ç%coles & formation",
       "Institutions publiques",
       "Administration locale",
       "Transports urbains",
@@ -58,7 +59,7 @@ const categories = [
   },
   {
     name: "Animaux",
-    subs: ["Vétérinaires", "Boutiques animales", "Toilettage & soins", "Pensions & gardes"],
+    subs: ["VÇ¸tÇ¸rinaires", "Boutiques animales", "Toilettage & soins", "Pensions & gardes"],
   },
   {
     name: "Argent & assurance",
@@ -66,14 +67,14 @@ const categories = [
       "Banques & microfinance",
       "Assurance auto & habitation",
       "Conseil financier",
-      "Investissement & épargne",
+      "Investissement & Ç¸pargne",
     ],
   },
   {
     name: "Maison & jardin",
     subs: [
-      "Construction & rénovation",
-      "Décoration intérieure",
+      "Construction & rÇ¸novation",
+      "DÇ¸coration intÇ¸rieure",
       "Mobilier & literie",
       "Jardinage & plein air",
     ],
@@ -82,27 +83,27 @@ const categories = [
     name: "Services aux entreprises",
     subs: [
       "Marketing & communication",
-      "Comptabilité & finances",
+      "ComptabilitÇ¸ & finances",
       "RH & recrutement",
-      "Informatique & cybersécurité",
+      "Informatique & cybersÇ¸curitÇ¸",
       "Logistique & transport",
     ],
   },
   {
     name: "Services",
-    subs: ["Énergie & électricité", "Plomberie & entretien", "Nettoyage & blanchisserie", "Sécurité & surveillance"],
+    subs: ["Ç%nergie & Ç¸lectricitÇ¸", "Plomberie & entretien", "Nettoyage & blanchisserie", "SÇ¸curitÇ¸ & surveillance"],
   },
   {
     name: "Shopping & mode",
-    subs: ["Vêtements & chaussures", "Accessoires & bijoux", "Parfums & beauté", "Magasins spécialisés"],
+    subs: ["VÇ¦tements & chaussures", "Accessoires & bijoux", "Parfums & beautÇ¸", "Magasins spÇ¸cialisÇ¸s"],
   },
   {
     name: "Sport & loisirs",
-    subs: ["Salles de sport & fitness", "Clubs & associations", "Parcs & activités", "Hôtels & loisirs"],
+    subs: ["Salles de sport & fitness", "Clubs & associations", "Parcs & activitÇ¸s", "HÇïtels & loisirs"],
   },
   {
     name: "Voyages & transport",
-    subs: ["Agences de voyage", "Hôtels & hébergements", "Location de véhicules", "Taxis & navettes"],
+    subs: ["Agences de voyage", "HÇïtels & hÇ¸bergements", "Location de vÇ¸hicules", "Taxis & navettes"],
   },
 ];
 
@@ -138,8 +139,8 @@ main()
     console.log("Categories seeded");
     await prisma.$disconnect();
   })
-  .catch(async (e) => {
-    console.error(e);
+  .catch(async (error) => {
+    console.error(error);
     await prisma.$disconnect();
     process.exit(1);
   });

@@ -1,5 +1,8 @@
 // src/auth.ts
 import NextAuth, { type NextAuthConfig } from "next-auth";
+import type { AdapterUser } from "next-auth/adapters";
+import type { JWT } from "next-auth/jwt";
+import { UserRole } from "@prisma/client";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type Adapter } from "@auth/core/adapters";
@@ -46,16 +49,17 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.id = (user as any).id;
+        const authUser = user as AdapterUser & { role?: UserRole | null };
+        token.role = authUser.role ?? null;
+        token.id = authUser.id;
       }
-      return token;
+      return token as JWT;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = (token as any)?.id ?? session.user.id;
+        session.user.id = typeof token.id === "string" ? token.id : session.user.id;
         session.user.role =
-          (token as any)?.role ?? (session.user as any)?.role ?? null;
+          (token.role as UserRole | null | undefined) ?? session.user.role ?? null;
       }
       return session;
     },
