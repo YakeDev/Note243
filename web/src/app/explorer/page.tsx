@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { PageShell, SectionHeader } from "@/components/layouts/Shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
@@ -15,9 +19,7 @@ async function getBusinesses(search?: string): Promise<BusinessCard[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : "";
   const base = getBaseUrl();
   try {
-    const res = await fetch(`${base}/api/business${qs}`, {
-      cache: "no-store",
-    });
+    const res = await fetch(`${base}/api/business${qs}`, { cache: "no-store" });
     if (!res.ok) return [];
     const json = await res.json();
     return json.data ?? [];
@@ -35,41 +37,58 @@ function getBaseUrl(): string {
 export default async function ExplorerPage({
   searchParams,
 }: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+  searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const params = await searchParams;
-  const search = typeof params.search === "string" ? params.search : undefined;
+  const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
   const businesses = await getBusinesses(search);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-semibold text-slate-900">Explorer</h1>
-          <p className="mt-2 text-slate-700">
-            Parcourez les établissements et lisez les avis.
-            {search ? ` Résultats pour "${search}".` : ""}
-          </p>
-        </div>
-      </div>
+    <PageShell className="space-y-8 py-12" width="xl">
+      <SectionHeader
+        title="Explorer"
+        description={
+          search
+            ? `Parcourez les établissements et lisez les avis. Résultats pour "${search}".`
+            : "Parcourez les établissements et lisez les avis."
+        }
+        actions={
+          <form
+            action="/explorer"
+            method="get"
+            className="flex w-full max-w-md items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-slate-300"
+          >
+            <input
+              type="text"
+              name="search"
+              aria-label="Rechercher"
+              defaultValue={search ?? ""}
+              placeholder="Rechercher un établissement..."
+              className="w-full border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0"
+            />
+            <Button type="submit" size="sm" variant="default">
+              Chercher
+            </Button>
+          </form>
+        }
+      />
 
-      <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {businesses.length === 0 && (
           <div className="col-span-full rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-center text-slate-600">
-            Aucun établissement trouvé. Ajoutez-en via l’API ou l’admin.
+            Aucun établissement trouvé. Affinez votre recherche ou ajoutez des données via l'admin.
           </div>
         )}
 
         {businesses.map((biz) => (
-          <article
+          <Card
             key={biz.id}
             className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <div className="h-32 w-full bg-gradient-to-r from-primary/10 to-primary/5" />
-            <div className="flex flex-1 flex-col gap-2 p-4">
+            <CardContent className="flex flex-1 flex-col gap-2 p-4">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                 <span>{biz.category?.name ?? "Catégorie"}</span>
-                <span className="text-slate-500">{biz._count?.reviews ?? 0} avis</span>
+                <Badge variant="outline">{biz._count?.reviews ?? 0} avis</Badge>
               </div>
               <h3 className="text-lg font-semibold text-slate-900">{biz.name}</h3>
               <p className="text-sm text-slate-700 line-clamp-3">
@@ -84,10 +103,11 @@ export default async function ExplorerPage({
                   Voir la fiche
                 </Link>
               </div>
-            </div>
-          </article>
+            </CardContent>
+          </Card>
         ))}
       </div>
-    </div>
+    </PageShell>
   );
 }
+

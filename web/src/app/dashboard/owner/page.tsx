@@ -1,6 +1,9 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
+import { DashboardShell } from "@/components/layouts/Shell";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { BusinessForm } from "./BusinessForm";
 
 export const dynamic = "force-dynamic";
@@ -44,35 +47,28 @@ export default async function OwnerDashboardPage() {
   const stats = {
     businesses: businesses.length,
     reviews: reviews.length,
-    avgRating: null as number | null,
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">
-          Espace Propriétaire
-        </p>
-        <h1 className="text-3xl font-bold text-slate-900">Tableau de bord</h1>
-        <p className="text-sm text-slate-600">
-          Gérez vos établissements, répondez aux avis et suivez vos statistiques.
-        </p>
-      </div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+    <DashboardShell
+      title="Espace Propriétaire"
+      description="Gérez vos établissements, répondez aux avis et suivez vos statistiques."
+      width="xl"
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-600">Établissements</p>
           <p className="text-3xl font-bold text-slate-900">{stats.businesses}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        </Card>
+        <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-600">Avis reçus (10 derniers)</p>
           <p className="text-3xl font-bold text-slate-900">{stats.reviews}</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        </Card>
+        <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="text-sm font-semibold text-slate-600">Certification</p>
           <p className="text-3xl font-bold text-slate-900">En attente</p>
           <p className="text-xs text-slate-500">Ajoutez des documents via une revendication.</p>
-        </div>
+        </Card>
       </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -90,7 +86,7 @@ export default async function OwnerDashboardPage() {
           ) : (
             <div className="grid gap-3 md:grid-cols-2">
               {businesses.map((biz) => (
-                <article
+                <Card
                   key={biz.id}
                   className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
                 >
@@ -111,7 +107,7 @@ export default async function OwnerDashboardPage() {
                   <p className="mt-2 text-sm text-slate-700 line-clamp-3">
                     {biz.description ?? "Description à compléter."}
                   </p>
-                </article>
+                </Card>
               ))}
             </div>
           )}
@@ -119,9 +115,9 @@ export default async function OwnerDashboardPage() {
 
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-slate-900">Créer un établissement</h2>
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <Card className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <BusinessForm categories={categories} />
-          </div>
+          </Card>
 
           <h2 className="text-lg font-semibold text-slate-900">Avis récents</h2>
           <div className="space-y-3">
@@ -131,7 +127,7 @@ export default async function OwnerDashboardPage() {
               </p>
             ) : (
               reviews.map((rev) => (
-                <div
+                <Card
                   key={rev.id}
                   className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
                 >
@@ -148,12 +144,13 @@ export default async function OwnerDashboardPage() {
                       Répondre / Ajouter un avis
                     </Link>
                   </div>
-                </div>
+                </Card>
               ))
             )}
           </div>
         </div>
       </div>
-    </div>
+    </DashboardShell>
   );
 }
+

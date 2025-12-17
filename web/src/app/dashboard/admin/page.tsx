@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { DashboardShell } from "@/components/layouts/Shell";
+import { Card } from "@/components/ui/card";
 import PromoteUserForm from "./promote-user-form";
 
 async function getStats() {
@@ -29,21 +31,17 @@ export default async function AdminDashboardPage() {
     { href: "/dashboard/admin/reviews", label: "Modérer les avis" },
     { href: "/dashboard/admin/reports", label: "Traiter les signalements" },
     { href: "/dashboard/admin/claims", label: "Valider les revendications" },
-    { href: "/dashboard/admin/suggestions", label: "Suggestions d’établissements" },
+    { href: "/dashboard/admin/suggestions", label: "Suggestions d'établissements" },
     { href: "/dashboard/admin/categories", label: "Catégories" },
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-col gap-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Note243 Admin</p>
-        <h1 className="text-3xl font-bold text-slate-900">Tableau de bord</h1>
-        <p className="text-sm text-slate-600">
-          Vue synthétique de l’activité : établissements, avis, signalements et utilisateurs.
-        </p>
-      </div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <DashboardShell
+      title="Tableau de bord admin"
+      description="Vue synthétique de l’activité : établissements, avis, signalements et utilisateurs."
+      width="xl"
+    >
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <Link
             key={card.label}
@@ -56,7 +54,7 @@ export default async function AdminDashboardPage() {
         ))}
       </div>
 
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Accès rapide</h2>
         <div className="mt-4 flex flex-wrap gap-3">
           {quickLinks.map((item) => (
@@ -69,17 +67,18 @@ export default async function AdminDashboardPage() {
             </Link>
           ))}
         </div>
-      </div>
+      </Card>
 
-      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <Card className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="text-lg font-semibold text-slate-900">Promouvoir un utilisateur</h2>
         <p className="text-sm text-slate-600">
-          Basculer un compte en ADMIN ou OWNER et marquer l’email comme vérifié si nécessaire.
+          Basculer un compte en ADMIN ou OWNER et marquer l'email comme vérifié si nécessaire.
         </p>
         <div className="mt-4">
           <PromoteUserForm />
         </div>
-      </div>
-    </div>
+      </Card>
+    </DashboardShell>
   );
 }
+
