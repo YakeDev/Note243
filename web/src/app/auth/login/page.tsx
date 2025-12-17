@@ -65,6 +65,7 @@ export default function LoginPage() {
     }
 
     try {
+      router.refresh(); // force revalidation of server components (Header/menu)
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
       const role = session?.user?.role;
@@ -123,4 +124,3 @@ export default function LoginPage() {
     </AuthShell>
   );
 }
-
