@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
-import { UserMenu } from "./UserMenu";
+import { HeaderNav } from "./HeaderNav";
 
 export async function Header() {
   const session = await auth();
@@ -12,28 +12,9 @@ export async function Header() {
         <Link href="/" className="text-lg font-semibold text-primary">
           Note243
         </Link>
-        <nav className="flex items-center gap-4 text-sm font-medium text-slate-700">
-          <Link href="/explorer" className="hover:text-primary">
-            Explorer
-          </Link>
-          <Link href="/categories" className="hover:text-primary">
-            Catégories
-          </Link>
-          <Link href="/review/new" className="hidden sm:inline-flex hover:text-primary">
-            Écrire un avis
-          </Link>
-        </nav>
-        {user ? (
-          <UserMenu user={user} />
-        ) : (
-          <Link
-            href="/auth/login"
-            className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary-hover"
-          >
-            Connexion
-          </Link>
-        )}
+        <HeaderNav user={user as any} />
       </div>
     </header>
   );
 }
+
