@@ -17,21 +17,14 @@ interface BusinessCard {
 
 async function getBusinesses(search?: string): Promise<BusinessCard[]> {
   const qs = search ? `?search=${encodeURIComponent(search)}` : "";
-  const base = getBaseUrl();
   try {
-    const res = await fetch(`${base}/api/business${qs}`, { cache: "no-store" });
+    const res = await fetch(`/api/business${qs}`, { cache: "no-store" });
     if (!res.ok) return [];
     const json = await res.json();
     return json.data ?? [];
   } catch {
     return [];
   }
-}
-
-function getBaseUrl(): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:3000";
 }
 
 export default async function ExplorerPage({
@@ -110,4 +103,3 @@ export default async function ExplorerPage({
     </PageShell>
   );
 }
-

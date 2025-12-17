@@ -1,9 +1,16 @@
 export const dynamic = "force-dynamic";
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "Note243 | Avis clients Lubumbashi",
@@ -18,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
+      <body className={`${inter.variable} antialiased`}>
         <Providers>
           <Header />
           <main className="min-h-screen bg-slate-50">{children}</main>
@@ -28,4 +35,3 @@ export default function RootLayout({
     </html>
   );
 }
-
