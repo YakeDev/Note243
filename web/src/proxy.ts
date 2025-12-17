@@ -8,12 +8,13 @@ const roleRedirect = (role?: string | null) => {
   return "/";
 };
 
-export async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const role = token?.role as string | undefined;
   const { pathname } = req.nextUrl;
 
-  const requireAuth = pathname.startsWith("/dashboard/admin") || pathname.startsWith("/dashboard/owner");
+  const requireAuth =
+    pathname.startsWith("/dashboard/admin") || pathname.startsWith("/dashboard/owner");
 
   if (!token && requireAuth) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
