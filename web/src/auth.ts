@@ -9,6 +9,13 @@ import { type Adapter } from "@auth/core/adapters";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
+const AUTH_DEBUG = process.env.AUTH_DEBUG === "true";
+const logAuth = (message: string, payload: unknown) => {
+  if (AUTH_DEBUG) {
+    console.log(`[auth] ${message}`, payload);
+  }
+};
+
 export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma) as Adapter,
   providers: [
@@ -53,6 +60,7 @@ export const authConfig: NextAuthConfig = {
         token.role = authUser.role ?? null;
         token.id = authUser.id;
       }
+      logAuth("jwt", { token });
       return token as JWT;
     },
     async session({ session, token }) {
@@ -61,13 +69,30 @@ export const authConfig: NextAuthConfig = {
         session.user.role =
           (token.role as UserRole | null | undefined) ?? session.user.role ?? null;
       }
+      logAuth("session", { session });
       return session;
     },
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/admin")) return `${baseUrl}/admin`;
-      if (url.startsWith("/dashboard/owner"))
-        return `${baseUrl}/dashboard/owner`;
-      return url.startsWith(baseUrl) ? url : baseUrl;
+      const base = new URL(baseUrl);
+      const resolved = url.startsWith("http") ? new URL(url) : new URL(url, base);
+
+      if (resolved.origin !== base.origin) return base.toString();
+
+      const callback = resolved.searchParams.get("callbackUrl");
+      if (callback) {
+        try {
+          const target = new URL(callback, base);
+          if (target.origin === base.origin) return target.toString();
+        } catch {
+          // ignore invalid callback
+        }
+      }
+
+      if (resolved.pathname.startsWith("/dashboard/admin") || resolved.pathname.startsWith("/admin"))
+        return `${base}/dashboard/admin`;
+      if (resolved.pathname.startsWith("/dashboard/owner")) return `${base}/dashboard/owner`;
+      if (resolved.pathname.startsWith("/dashboard")) return `${base}/dashboard`;
+      return resolved.toString();
     },
   },
 };

@@ -4,6 +4,12 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { businessSchema } from "@/lib/validators/business";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+export const fetchCache = "force-no-store";
+
+const cacheControl = { headers: { "Cache-Control": "no-store, max-age=0" } } as const;
+
 // GET /api/business?search=&categoryId=
 export async function GET(request: Request) {
   try {
@@ -13,6 +19,19 @@ export async function GET(request: Request) {
     const categoryIdRaw = searchParams.get("categoryId")?.trim();
     const categoryId = categoryIdRaw && categoryIdRaw.length > 0 ? categoryIdRaw : undefined;
     const statusParam = searchParams.get("status");
+    const sort = searchParams.get("sort") ?? "recent";
+    const minRatingRaw = searchParams.get("minRating");
+    const parsedMinRating = minRatingRaw ? Number.parseInt(minRatingRaw, 10) : null;
+    const minRating =
+      parsedMinRating && Number.isFinite(parsedMinRating)
+        ? Math.min(Math.max(parsedMinRating, 1), 5)
+        : null;
+
+    const orderBy: Prisma.BusinessOrderByWithRelationInput = (() => {
+      if (sort === "reviews") return { reviews: { _count: "desc" } };
+      if (sort === "rating") return { reviews: { _avg: { rating: "desc" } } };
+      return { createdAt: "desc" };
+    })();
     const status = statusParam && Object.values(BusinessStatus).includes(statusParam as BusinessStatus)
       ? (statusParam as BusinessStatus)
       : undefined;
@@ -39,6 +58,7 @@ export async function GET(request: Request) {
             ],
           }
         : {}),
+      ...(minRating ? { reviews: { some: { rating: { gte: minRating } } } } : {}),
     };
 
     const businesses = await prisma.business.findMany({
@@ -47,16 +67,28 @@ export async function GET(request: Request) {
         category: { select: { id: true, name: true, slug: true } },
         owner: { select: { id: true, name: true, email: true } },
         _count: { select: { reviews: true, favorites: true, claims: true } },
+        reviews: { select: { rating: true } },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy,
     });
 
-    return NextResponse.json({ data: businesses }, { status: 200 });
+    const withAverages = businesses.map((biz) => {
+      const ratings = biz.reviews.map((r) => r.rating);
+      const rating = ratings.length
+        ? Number((ratings.reduce((acc, val) => acc + val, 0) / ratings.length).toFixed(2))
+        : 0;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { reviews, ...rest } = biz;
+      return { ...rest, rating };
+    });
+
+    return NextResponse.json({ data: withAverages }, { status: 200, ...cacheControl });
   } catch (error) {
     console.error("GET /api/business error:", error);
     return NextResponse.json(
       { message: "Erreur lors du chargement des etablissements" },
-      { status: 500 },
+      { status: 500, ...cacheControl },
     );
   }
 }
@@ -89,12 +121,15 @@ export async function POST(request: Request) {
     }
 
     const business = await prisma.business.create({ data: payload });
-    return NextResponse.json({ data: business, message: "Etablissement cree avec succes" }, { status: 201 });
+    return NextResponse.json(
+      { data: business, message: "Etablissement cree avec succes" },
+      { status: 201, ...cacheControl },
+    );
   } catch (error) {
     console.error("POST /api/business error:", error);
     return NextResponse.json(
       { message: "Erreur lors de la creation de l'etablissement" },
-      { status: 500 },
+      { status: 500, ...cacheControl },
     );
   }
 }

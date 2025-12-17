@@ -16,7 +16,10 @@ export async function middleware(req: NextRequest) {
   const requireAuth = pathname.startsWith("/dashboard/admin") || pathname.startsWith("/dashboard/owner");
 
   if (!token && requireAuth) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+    const loginUrl = new URL("/auth/login", req.url);
+    const callback = `${req.nextUrl.pathname}${req.nextUrl.search}`;
+    loginUrl.searchParams.set("callbackUrl", callback);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Protect admin dashboard
