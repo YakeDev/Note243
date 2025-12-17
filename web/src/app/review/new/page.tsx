@@ -1,5 +1,7 @@
 "use client";
+/* eslint-disable jsx-a11y/label-has-associated-control */
 
+import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { signIn, useSession } from "next-auth/react";
@@ -10,6 +12,7 @@ import {
   StarIcon,
   CheckCircleIcon,
 } from "@/components/icons";
+import { cn } from "@/lib/utils";
 
 type BusinessOption = {
   id: string;
@@ -17,7 +20,7 @@ type BusinessOption = {
   category?: { name: string };
 };
 
-type CategoryOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string; children?: { id: string; name: string }[] };
 
 function StarsInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
@@ -31,9 +34,7 @@ function StarsInput({ value, onChange }: { value: number; onChange: (v: number) 
           aria-label={`Note ${n}`}
         >
           <StarIcon
-            className={`h-6 w-6 ${
-              n <= value ? "fill-amber-400" : "fill-transparent stroke-amber-400"
-            }`}
+            className={`h-6 w-6 ${n <= value ? "fill-amber-400" : "fill-transparent stroke-amber-400"}`}
           />
         </button>
       ))}
@@ -55,6 +56,7 @@ function SuggestModal({
   const [form, setForm] = useState({
     name: "",
     categoryId: "",
+    subCategoryId: "",
     location: "",
     phone: "",
     website: "",
@@ -64,10 +66,13 @@ function SuggestModal({
 
   useEffect(() => {
     if (!open) {
-      setForm({ name: "", categoryId: "", location: "", phone: "", website: "" });
+      setForm({ name: "", categoryId: "", subCategoryId: "", location: "", phone: "", website: "" });
       setError(null);
     }
   }, [open]);
+
+  const selectedCategory = categories.find((c) => c.id === form.categoryId);
+  const subCategories = selectedCategory?.children ?? [];
 
   if (!open) return null;
 
@@ -85,7 +90,7 @@ function SuggestModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name.trim(),
-          categoryId: form.categoryId,
+          categoryId: form.subCategoryId || form.categoryId,
           location: form.location || undefined,
           phone: form.phone || undefined,
           website: form.website || undefined,
@@ -137,7 +142,7 @@ function SuggestModal({
             <select
               className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
               value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+              onChange={(e) => setForm({ ...form, categoryId: e.target.value, subCategoryId: "" })}
               required
             >
               <option value="">Sélectionner</option>
@@ -148,6 +153,23 @@ function SuggestModal({
               ))}
             </select>
           </div>
+          {subCategories.length > 0 && (
+            <div>
+              <label className="text-sm font-semibold text-slate-800">Sous-catégorie (optionnel)</label>
+              <select
+                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                value={form.subCategoryId}
+                onChange={(e) => setForm({ ...form, subCategoryId: e.target.value })}
+              >
+                <option value="">Aucune</option>
+                {subCategories.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="text-sm font-semibold text-slate-800">
@@ -219,6 +241,8 @@ export default function NewReviewPage() {
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [query, setQuery] = useState("");
+  const [showResults, setShowResults] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [businessId, setBusinessId] = useState<string | undefined>(preselectedId);
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
@@ -239,7 +263,7 @@ export default function NewReviewPage() {
         const bizJson = await bizRes.json().catch(() => ({}));
         const catJson = await catRes.json().catch(() => ({}));
         setBusinesses(bizJson.data ?? []);
-        setCategories((catJson.data ?? []).map((c: any) => ({ id: c.id, name: c.name })));
+        setCategories(catJson.data ?? []);
         if (!businessId && bizJson.data?.[0]?.id) setBusinessId(bizJson.data[0].id);
       } catch {
         // ignore
@@ -253,10 +277,37 @@ export default function NewReviewPage() {
     return businesses.filter((b) => b.name.toLowerCase().includes(q)).slice(0, 8);
   }, [businesses, query]);
 
+  useEffect(() => {
+    setActiveIndex(0);
+  }, [query, filtered.length]);
+
   const selected = useMemo(
     () => businesses.find((b) => b.id === businessId),
     [businesses, businessId],
   );
+
+  const selectBusiness = (biz: BusinessOption) => {
+    setBusinessId(biz.id);
+    setQuery(biz.name);
+    setShowResults(false);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!filtered.length) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev + 1) % filtered.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setActiveIndex((prev) => (prev - 1 + filtered.length) % filtered.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const choice = filtered[activeIndex];
+      if (choice) selectBusiness(choice);
+    } else if (e.key === "Escape") {
+      setShowResults(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -330,60 +381,62 @@ export default function NewReviewPage() {
 
             <form className="mt-6 space-y-6" onSubmit={handleSubmit}>
               <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold text-slate-800"
-                  htmlFor="business"
-                >
+                <label className="text-sm font-semibold text-slate-800" htmlFor="business">
                   Établissement
                 </label>
-                <div className=" ">
-                  <div className="flex items-center gap-2 text-sm text-slate-600 rounded-full border border-slate-200 bg-white px-3 py-2 ">
+                <div className="relative">
+                  <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600">
                     <MagnifyingGlassIcon className="h-4 w-4" />
                     <input
                       id="business"
                       type="text"
                       value={query}
-                      onChange={(e) => setQuery(e.target.value)}
+                      onChange={(e) => {
+                        setQuery(e.target.value);
+                        setShowResults(true);
+                      }}
+                      onFocus={() => setShowResults(true)}
+                      onKeyDown={handleKeyDown}
                       placeholder="Rechercher un établissement"
-                      className="w-full border-0 bg-transparent transition hover:border-slate-300 focus-within:border-slate-400 text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                      className="w-full border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-500 focus:outline-none focus:ring-0"
+                      autoComplete="off"
                     />
                   </div>
-                  <div className="mt-3 space-y-2">
-                    {filtered.map((b) => (
-                      <button
-                        type="button"
-                        key={b.id}
-                        onClick={() => {
-                          setBusinessId(b.id);
-                          setQuery(b.name);
-                        }}
-                        className={`flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm ${
-                          businessId === b.id
-                            ? "bg-primary/10 text-primary"
-                            : "hover:bg-slate-50"
-                        }`}
-                      >
-                        <span>{b.name}</span>
-                        {b.category?.name && (
-                          <span className="text-xs text-slate-500">
-                            {b.category.name}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                    {filtered.length === 0 && (
-                      <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
-                        <span>Aucun résultat.</span>
-                        <button
-                          type="button"
-                          className="text-primary underline"
-                          onClick={() => setModalOpen(true)}
-                        >
-                          Proposer un établissement
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  {showResults && (
+                    <div className="absolute left-0 right-0 z-20 mt-2 max-h-72 overflow-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-lg">
+                      {filtered.length === 0 ? (
+                        <div className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                          <span>Aucun résultat.</span>
+                          <button
+                            type="button"
+                            className="text-primary underline"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => setModalOpen(true)}
+                          >
+                            Proposer
+                          </button>
+                        </div>
+                      ) : (
+                        filtered.map((b, idx) => (
+                          <button
+                            type="button"
+                            key={b.id}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => selectBusiness(b)}
+                            className={cn(
+                              "flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-sm",
+                              idx === activeIndex ? "bg-primary/10 text-primary" : "hover:bg-slate-50",
+                            )}
+                          >
+                            <span>{b.name}</span>
+                            {b.category?.name && (
+                              <span className="text-xs text-slate-500">{b.category.name}</span>
+                            )}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
                   <div className="mt-2 flex items-center justify-between">
                     <button
                       type="button"
@@ -392,28 +445,19 @@ export default function NewReviewPage() {
                     >
                       Proposer un établissement
                     </button>
-                    {businessId && (
-                      <span className="text-xs text-slate-500">
-                        ID: {businessId}
-                      </span>
-                    )}
+                    {businessId && <span className="text-xs text-slate-500">ID: {businessId}</span>}
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-800">
-                  Votre note *
-                </label>
+                <label className="text-sm font-semibold text-slate-800">Votre note *</label>
                 <StarsInput value={rating} onChange={setRating} />
                 <p className="text-xs text-slate-500">Cliquez pour noter</p>
               </div>
 
               <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold text-slate-800"
-                  htmlFor="comment"
-                >
+                <label className="text-sm font-semibold text-slate-800" htmlFor="comment">
                   Votre commentaire
                 </label>
                 <textarea
@@ -424,9 +468,7 @@ export default function NewReviewPage() {
                   onChange={(e) => setComment(e.target.value)}
                   className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
-                <div className="text-right text-xs text-slate-500">
-                  {comment.length} / 200
-                </div>
+                <div className="text-right text-xs text-slate-500">{comment.length} / 200</div>
               </div>
 
               <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -440,10 +482,7 @@ export default function NewReviewPage() {
               </label>
 
               <div className="space-y-2">
-                <label
-                  className="text-sm font-semibold text-slate-800"
-                  htmlFor="categoryVisit"
-                >
+                <label className="text-sm font-semibold text-slate-800" htmlFor="categoryVisit">
                   Catégorie de visite
                 </label>
                 <div className="relative">
@@ -458,9 +497,6 @@ export default function NewReviewPage() {
                     <option>Visite</option>
                     <option>Service client</option>
                   </select>
-                  <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                    ▼
-                  </span>
                 </div>
               </div>
 
@@ -483,17 +519,14 @@ export default function NewReviewPage() {
                 </button>
               </div>
               <p className="text-xs text-slate-500">
-                Si l'établissement n'existe pas, proposez-le : il sera validé
-                par un administrateur avant d'apparaitre publiquement. Le
-                proprietaire pourra ensuite le revendiquer.
+                Si l'établissement n'existe pas, proposez-le : il sera validé par un administrateur avant
+                d'apparaitre publiquement. Le proprietaire pourra ensuite le revendiquer.
               </p>
             </form>
           </section>
 
           <aside className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-sm font-semibold text-slate-900">
-              Établissement
-            </p>
+            <p className="text-sm font-semibold text-slate-900">Établissement</p>
             <div className="mt-3 overflow-hidden rounded-xl border border-slate-100">
               <img
                 src={mockBusiness.image}
@@ -518,12 +551,8 @@ export default function NewReviewPage() {
                       />
                     ))}
                   </span>
-                  <span className="font-semibold text-slate-900">
-                    {mockBusiness.rating.toFixed(1)}
-                  </span>
-                  <span className="text-slate-500">
-                    ({mockBusiness.reviews} avis)
-                  </span>
+                  <span className="font-semibold text-slate-900">{mockBusiness.rating.toFixed(1)}</span>
+                  <span className="text-slate-500">({mockBusiness.reviews} avis)</span>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs font-semibold">
                   <span className="rounded-full bg-slate-100 px-2 py-1 text-slate-700">
@@ -534,25 +563,19 @@ export default function NewReviewPage() {
                     Certifié Note243
                   </span>
                 </div>
-                <p className="text-sm text-slate-600">
-                  {mockBusiness.location}
-                </p>
+                <p className="text-sm text-slate-600">{mockBusiness.location}</p>
               </div>
             </div>
           </aside>
         </div>
       </div>
 
-      
-
       <SuggestModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
         categories={categories}
         onSubmitted={() =>
-          setInfo(
-            "Suggestion envoyee. Elle sera validee par un administrateur avant d'etre visible."
-          )
+          setInfo("Suggestion envoyee. Elle sera validee par un administrateur avant d'etre visible.")
         }
       />
     </div>
