@@ -2,6 +2,10 @@ import type { ComponentType, SVGProps } from "react";
 import Link from "next/link";
 import { Prisma, ReviewStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { PageShell, SectionHeader } from "@/components/layouts/Shell";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   AcademicCapIcon,
   BriefcaseIcon,
@@ -282,101 +286,104 @@ export default async function Home({
   ]);
 
   return (
-    <div className="bg-white">
-      <div className="bg-gradient-to-br from-blue-600 to-primary text-white">
-        <header className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-24 text-center sm:px-6 lg:px-8">
-          <p className="text-xs uppercase tracking-widest text-white/70">
-            Note243 - Avis locaux
+    <div className="bg-slate-50">
+      <div className="bg-gradient-to-br from-blue-600 via-blue-600 to-primary text-white shadow-inner">
+        <PageShell className="flex flex-col gap-5 py-16 text-center sm:gap-6" width="xl">
+          <p className="text-xs uppercase tracking-[0.2em] text-white/70">
+            Note243 · Avis locaux
           </p>
-          <h1 className="text-3xl font-bold sm:text-4xl">
-            Trouvez les meilleurs services a Lubumbashi
+          <h1 className="text-3xl font-bold leading-tight sm:text-4xl">
+            Trouvez les meilleurs services à Lubumbashi
           </h1>
-          <p className="mx-auto max-w-2xl text-sm text-white/80 sm:text-base">
-            Decouvrez, comparez et partagez vos retours sur les etablissements de la
-            ville. Les avis recents guident toute la communaute.
+          <p className="mx-auto max-w-2xl text-sm text-white/85 sm:text-base">
+            Découvrez, comparez et partagez vos retours sur les établissements de la ville. Les avis récents guident toute la communauté.
           </p>
-          <form
-            action="/"
-            method="get"
-            className="mt-4 grid w-full gap-3 rounded-2xl border border-white/20 bg-white/10 p-4 backdrop-blur sm:grid-cols-2 lg:grid-cols-[1.2fr,1fr,1fr,0.6fr,auto]"
-          >
-            <input
-              type="text"
-              name="q"
-              defaultValue={filters.q ?? ""}
-              placeholder="Rechercher un restaurant, une clinique, un service..."
-              maxLength={MAX_TEXT_LENGTH}
-              className="h-12 rounded-lg border border-white/20 bg-white/80 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <select
-              name="category"
-              defaultValue={filters.category ?? ""}
-              className="h-12 rounded-lg border border-white/20 bg-white/80 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              <option value="">Toutes les categories</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.slug}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              name="city"
-              defaultValue={filters.city ?? ""}
-              placeholder="Ville (ex: Lubumbashi)"
-              maxLength={MAX_TEXT_LENGTH}
-              className="h-12 rounded-lg border border-white/20 bg-white/80 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <input
-              type="number"
-              name="minRating"
-              defaultValue={filters.minRating ?? ""}
-              min={1}
-              max={5}
-              inputMode="numeric"
-              placeholder="Note mini"
-              className="h-12 rounded-lg border border-white/20 bg-white/80 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              type="submit"
-              className="h-12 rounded-lg bg-white px-4 text-sm font-semibold text-primary shadow-sm transition hover:shadow-md"
-            >
-              Chercher
-            </button>
-          </form>
-        </header>
+          <Card className="border-white/15 bg-white/10 backdrop-blur">
+            <CardContent className="p-4 sm:p-6">
+              <form
+                action="/"
+                method="get"
+                className="grid w-full gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr,1fr,1fr,0.7fr,auto]"
+              >
+                <input
+                  type="text"
+                  name="q"
+                  aria-label="Recherche"
+                  defaultValue={filters.q ?? ""}
+                  placeholder="Rechercher un restaurant, une clinique, un service..."
+                  maxLength={MAX_TEXT_LENGTH}
+                  className="h-12 rounded-lg border border-white/30 bg-white/90 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <select
+                  name="category"
+                  aria-label="Catégorie"
+                  defaultValue={filters.category ?? ""}
+                  className="h-12 rounded-lg border border-white/30 bg-white/90 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                >
+                  <option value="">Toutes les catégories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="text"
+                  name="city"
+                  aria-label="Ville"
+                  defaultValue={filters.city ?? ""}
+                  placeholder="Ville (ex: Lubumbashi)"
+                  maxLength={MAX_TEXT_LENGTH}
+                  className="h-12 rounded-lg border border-white/30 bg-white/90 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <input
+                  type="number"
+                  name="minRating"
+                  aria-label="Note minimale"
+                  defaultValue={filters.minRating ?? ""}
+                  min={1}
+                  max={5}
+                  inputMode="numeric"
+                  placeholder="Note mini"
+                  className="h-12 rounded-lg border border-white/30 bg-white/90 px-3 text-sm text-slate-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <Button type="submit" className="h-12 rounded-lg bg-white px-4 text-sm font-semibold text-primary shadow-sm transition hover:shadow-md">
+                  Chercher
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </PageShell>
       </div>
 
-      <main className="mx-auto max-w-6xl space-y-12 px-4 py-10 sm:px-6 lg:px-8">
+      <PageShell className="space-y-12 py-12" width="xl">
         <section className="space-y-6">
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Explorer par categorie</h2>
-              <p className="text-sm text-slate-600">
-                Selectionnez un secteur pour filtrer les resultats.
-              </p>
-            </div>
-          </div>
+          <SectionHeader
+            title="Explorer par catégorie"
+            description="Sélectionnez un secteur pour filtrer les résultats."
+          />
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {categories.map((cat) => (
               <Link
                 key={cat.id}
                 href={`/?category=${encodeURIComponent(cat.slug)}`}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
+                className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary ring-1 ring-primary/15">
                     {(() => {
                       const Icon = getCategoryIcon(cat.icon);
                       if (Icon) {
-                        return <Icon className="h-5 w-5" />;
+                        return <Icon className="h-5 w-5" aria-hidden="true" />;
                       }
                       return cat.name ? cat.name.charAt(0).toUpperCase() : "?";
                     })()}
                   </div>
-                  <div>
+                  <div className="flex flex-col">
                     <p className="text-sm font-semibold text-slate-900">{cat.name}</p>
+                    <span className="text-xs text-slate-500 group-hover:text-primary">
+                      Voir les établissements
+                    </span>
                   </div>
                 </div>
               </Link>
@@ -385,25 +392,21 @@ export default async function Home({
         </section>
 
         <section className="space-y-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">
-                {hasActiveFilters ? "Resultats" : "Etablissements populaires"}
-              </h2>
-              <p className="text-sm text-slate-600">
-                Classement par note moyenne puis par volume d&apos;avis.
-              </p>
-            </div>
-            {hasActiveFilters ? (
-              <Link href="/" className="text-sm font-semibold text-primary hover:underline">
-                Effacer les filtres
-              </Link>
-            ) : null}
-          </div>
+          <SectionHeader
+            title={hasActiveFilters ? "Résultats" : "Établissements populaires"}
+            description="Classement par note moyenne puis par volume d'avis."
+            actions={
+              hasActiveFilters ? (
+                <Link href="/" className="text-sm font-semibold text-primary hover:underline">
+                  Effacer les filtres
+                </Link>
+              ) : null
+            }
+          />
 
           {businesses.length === 0 ? (
-            <p className="text-sm text-slate-600">
-              Aucun resultat trouve. Essayez un autre terme ou reduisez les filtres.
+            <p className="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-slate-600">
+              Aucun résultat trouvé. Essayez un autre terme ou réduisez les filtres.
             </p>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -411,14 +414,21 @@ export default async function Home({
                 const hasReviews = biz.reviewCount > 0;
                 const ratingLabel = hasReviews ? biz.rating.toFixed(1) : "Aucun avis";
                 return (
-                  <div
+                  <Card
                     key={biz.id}
-                    className="flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                    className="flex h-full flex-col overflow-hidden border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
                   >
-                    <div className="flex-1 space-y-2 p-4">
-                      <p className="text-xs font-semibold uppercase text-slate-500">
-                        {biz.category?.name ?? "Etablissement"}
-                      </p>
+                    <CardContent className="flex-1 space-y-2 p-4">
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs font-semibold uppercase text-slate-500">
+                          {biz.category?.name ?? "Établissement"}
+                        </p>
+                        {hasReviews ? (
+                          <Badge variant="muted">{ratingLabel}</Badge>
+                        ) : (
+                          <Badge variant="outline">Nouveau</Badge>
+                        )}
+                      </div>
                       <Link
                         href={`/business/${biz.id}`}
                         className="text-base font-semibold text-slate-900 hover:text-primary"
@@ -433,14 +443,14 @@ export default async function Home({
                         </span>
                       </div>
                       <p className="text-sm text-slate-600 line-clamp-2">
-                        {biz.description ?? "Description a completer."}
+                        {biz.description ?? "Description à compléter."}
                       </p>
-                    </div>
+                    </CardContent>
                     <div className="flex items-center gap-2 border-t border-slate-100 px-4 py-3 text-xs text-slate-500">
                       <MapPinIcon className="h-4 w-4 text-primary" />
                       {biz.city ?? "Lubumbashi"}
                     </div>
-                  </div>
+                  </Card>
                 );
               })}
             </div>
@@ -448,19 +458,15 @@ export default async function Home({
         </section>
 
         <section className="space-y-6">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-xl font-bold text-slate-900">Avis recents</h2>
-              <p className="text-sm text-slate-600">
-                Derniers retours verifies de la communaute.
-              </p>
-            </div>
-          </div>
+          <SectionHeader
+            title="Avis récents"
+            description="Derniers retours vérifiés de la communauté."
+          />
           <div className="grid gap-4 md:grid-cols-2">
             {recentReviews.map((review) => (
               <article
                 key={review.id}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-md"
               >
                 <div className="flex items-center justify-between gap-3">
                   <div>
@@ -490,16 +496,16 @@ export default async function Home({
           </div>
         </section>
 
-        <section className="overflow-hidden rounded-3xl bg-primary px-6 py-10 text-white sm:px-10">
+        <section className="overflow-hidden rounded-3xl bg-primary px-6 py-10 text-white shadow-sm sm:px-10">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <p className="text-xs uppercase tracking-widest text-white/70">
-                Proprietaires
+                Propriétaires
               </p>
               <h3 className="text-2xl font-bold">Revendiquer votre fiche</h3>
               <p className="max-w-xl text-sm text-white/80">
-                Mettez a jour vos informations, repondez aux avis et gagnez la confiance
-                des clients de Lubumbashi. Nous verifions chaque demande.
+                Mettez à jour vos informations, répondez aux avis et gagnez la confiance
+                des clients de Lubumbashi. Nous vérifions chaque demande.
               </p>
             </div>
             <Link
@@ -510,7 +516,7 @@ export default async function Home({
             </Link>
           </div>
         </section>
-      </main>
+      </PageShell>
     </div>
   );
 }

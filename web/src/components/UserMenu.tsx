@@ -10,6 +10,12 @@ type User = Session["user"];
 const roleDashboard = (role?: string | null) =>
   role === "ADMIN" ? "/dashboard/admin" : role === "OWNER" ? "/dashboard/owner" : "/dashboard";
 
+function getBaseUrl() {
+  if (typeof window !== "undefined") return window.location.origin;
+  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
+  return "http://localhost:3000";
+}
+
 export function UserMenu({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
@@ -48,15 +54,15 @@ export function UserMenu({ user }: { user: User }) {
           <div className="my-1 h-px bg-slate-200" />
           <MenuLink href={roleDashboard(user?.role)} label="Tableau de bord" />
           <MenuLink href="/profile" label="Profil" />
-          <MenuLink href="/settings" label="Paramètres" />
+          <MenuLink href="/settings" label="Parametres" />
           <MenuLink href="/help" label="Aide" />
           <div className="my-1 h-px bg-slate-200" />
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ callbackUrl: `${getBaseUrl()}/` })}
             className="w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-rose-600 hover:bg-rose-50"
           >
-            Déconnexion
+            Deconnexion
           </button>
         </div>
       )}
@@ -74,3 +80,4 @@ function MenuLink({ href, label }: { href: string; label: string }) {
     </Link>
   );
 }
+
