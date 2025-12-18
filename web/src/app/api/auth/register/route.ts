@@ -20,6 +20,17 @@ function emailTemplate(verifyUrl: string) {
   </div>`;
 }
 
+function emailTextTemplate(verifyUrl: string) {
+  return `Confirmez votre adresse email
+
+Merci de rejoindre Note243.
+
+Pour vérifier votre email, ouvrez ce lien :
+${verifyUrl}
+
+— Note243`;
+}
+
 function getBaseUrl(req: Request): string {
   const envUrl = process.env.NEXT_PUBLIC_APP_URL ?? process.env.NEXTAUTH_URL;
   if (envUrl) return envUrl;
@@ -89,24 +100,33 @@ export async function POST(request: Request) {
     const baseUrl = getBaseUrl(request);
     const verifyUrl = `${baseUrl}/auth/verify?token=${token}`;
 
+    const port = Number(process.env.SMTP_PORT ?? 587);
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT ?? 587),
-      secure: false,
+      port,
+      secure: port === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
       },
     });
 
+    const from = process.env.EMAIL_FROM ?? process.env.SMTP_FROM;
+
     let warning: string | undefined;
     try {
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM,
-        to: user.email,
-        subject: "Confirmez votre adresse email",
-        html: emailTemplate(verifyUrl),
-      });
+      if (!from) {
+        warning =
+          "Compte créé mais l'email n'a pas pu être envoyé (EMAIL_FROM/SMTP_FROM manquant).";
+      } else {
+        await transporter.sendMail({
+          from,
+          to: user.email,
+          subject: "Confirmez votre adresse email",
+          html: emailTemplate(verifyUrl),
+          text: emailTextTemplate(verifyUrl),
+        });
+      }
     } catch (mailErr) {
       console.error("REGISTER email send error:", mailErr);
       warning =
