@@ -28,8 +28,16 @@ async function getOwnerData(userId: string) {
       },
     }),
     prisma.category.findMany({
+      where: { parentId: null },
       orderBy: { name: "asc" },
-      select: { id: true, name: true },
+      select: {
+        id: true,
+        name: true,
+        children: {
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        },
+      },
     }),
   ]);
 
@@ -153,4 +161,3 @@ export default async function OwnerDashboardPage() {
     </DashboardShell>
   );
 }
-

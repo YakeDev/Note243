@@ -1,13 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { businessSchema } from "@/lib/validators/business";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 
-type CategoryOption = { id: string; name: string };
+type CategoryOption = { id: string; name: string; children?: { id: string; name: string }[] };
 
 export function BusinessForm({ categories }: { categories: CategoryOption[] }) {
+  const [parentCategoryId, setParentCategoryId] = useState(categories[0]?.id ?? "");
+  const childOptions = useMemo(
+    () => categories.find((cat) => cat.id === parentCategoryId)?.children ?? [],
+    [categories, parentCategoryId],
+  );
+
   const [form, setForm] = useState({
     name: "",
     description: "",
@@ -15,7 +21,7 @@ export function BusinessForm({ categories }: { categories: CategoryOption[] }) {
     city: "Lubumbashi",
     phone: "",
     website: "",
-    categoryId: categories[0]?.id ?? "",
+    categoryId: childOptions[0]?.id ?? categories[0]?.id ?? "",
   });
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -54,8 +60,9 @@ export function BusinessForm({ categories }: { categories: CategoryOption[] }) {
       city: "Lubumbashi",
       phone: "",
       website: "",
-      categoryId: categories[0]?.id ?? "",
+      categoryId: childOptions[0]?.id ?? categories[0]?.id ?? "",
     });
+    setParentCategoryId(categories[0]?.id ?? "");
   };
 
   return (
@@ -66,21 +73,54 @@ export function BusinessForm({ categories }: { categories: CategoryOption[] }) {
         onChange={(e) => setForm({ ...form, name: e.target.value })}
         required
       />
-      <div>
-        <label className="text-sm font-medium text-slate-800">Catégorie</label>
-        <select
-          className="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-primary focus:ring-primary"
-          value={form.categoryId}
-          onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
-          required
-        >
-          {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>
-              {cat.name}
-            </option>
-          ))}
-        </select>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div>
+          <label className="text-sm font-medium text-slate-800">Catégorie parente</label>
+          <select
+            className="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-primary focus:ring-primary"
+            value={parentCategoryId}
+            onChange={(e) => {
+              const newParent = e.target.value;
+              setParentCategoryId(newParent);
+              const nextChildren =
+                categories.find((cat) => cat.id === newParent)?.children ?? [];
+              setForm((prev) => ({
+                ...prev,
+                categoryId: nextChildren[0]?.id ?? newParent,
+              }));
+            }}
+            required
+          >
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium text-slate-800">Sous-catégorie</label>
+          <select
+            className="mt-1 w-full rounded-lg border-slate-300 text-sm focus:border-primary focus:ring-primary"
+            value={form.categoryId}
+            onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+            required
+          >
+            {childOptions.length === 0 ? (
+              <option value={parentCategoryId}>Aucune sous-catégorie (utiliser la parente)</option>
+            ) : (
+              childOptions.map((child) => (
+                <option key={child.id} value={child.id}>
+                  {child.name}
+                </option>
+              ))
+            )}
+          </select>
+        </div>
       </div>
+
       <Input
         label="Adresse"
         value={form.address}
@@ -115,7 +155,7 @@ export function BusinessForm({ categories }: { categories: CategoryOption[] }) {
       {success && <p className="text-sm text-emerald-700">{success}</p>}
 
       <Button type="submit" loading={loading} className="w-full justify-center">
-        Créer l’établissement
+        Créer l'établissement
       </Button>
     </form>
   );
