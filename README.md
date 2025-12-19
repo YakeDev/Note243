@@ -103,8 +103,6 @@ Le projet est structuré en deux blocs principaux :
 - Authentification via NextAuth
 - Validation des données via Zod
 
----
-
 ## 7. Structure Complète du Frontend (`/src/app`)
 
 ```
