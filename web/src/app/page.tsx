@@ -91,9 +91,10 @@ function sanitizeText(value: string | string[] | undefined): string | null {
   return trimmed.slice(0, MAX_TEXT_LENGTH);
 }
 
-function parseSearchParams(
-  searchParams: Record<string, string | string[] | undefined> | undefined,
-): Filters {
+type SearchParams = Record<string, string | string[] | undefined>;
+type SearchParamsInput = SearchParams | Promise<SearchParams> | undefined;
+
+function parseSearchParams(searchParams: SearchParams | undefined): Filters {
   const safeParams = searchParams ?? {};
   const q = sanitizeText(safeParams.q);
   const category = sanitizeText(safeParams.category);
@@ -269,12 +270,14 @@ function ReviewSnippet({ text }: { text: string }) {
   return <p className="text-sm text-slate-600">{`${text.slice(0, 177)}...`}</p>;
 }
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams?: Record<string, string | string[] | undefined>;
-}) {
-  const filters = parseSearchParams(searchParams);
+export default async function Home({ searchParams }: { searchParams?: SearchParamsInput }) {
+  // In React 19 / Next 16, searchParams is a Promise in RSC. Await it if needed.
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as any).then === "function"
+      ? await (searchParams as Promise<SearchParams>)
+      : (searchParams as SearchParams | undefined);
+
+  const filters = parseSearchParams(resolvedSearchParams);
   const hasActiveFilters = Boolean(
     filters.q || filters.category || filters.city || filters.minRating,
   );
@@ -510,6 +513,7 @@ export default async function Home({
             </div>
             <Link
               href="/owner"
+              prefetch={false}
               className="mt-4 inline-flex items-center justify-center rounded-full bg-white px-5 py-3 text-sm font-semibold text-primary shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg sm:mt-0"
             >
               Devenir partenaire
