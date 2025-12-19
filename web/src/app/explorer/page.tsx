@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
 import { PageShell, SectionHeader } from "@/components/layouts/Shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/Button";
@@ -16,15 +18,31 @@ interface BusinessCard {
 }
 
 async function getBusinesses(search?: string): Promise<BusinessCard[]> {
-  const qs = search ? `?search=${encodeURIComponent(search)}` : "";
-  try {
-    const res = await fetch(`/api/business${qs}`, { cache: "no-store" });
-    if (!res.ok) return [];
-    const json = await res.json();
-    return json.data ?? [];
-  } catch {
-    return [];
-  }
+  const q = search?.trim();
+
+  const where: Prisma.BusinessWhereInput =
+    q && q.length > 0
+      ? {
+          OR: [
+            { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
+            { description: { contains: q, mode: Prisma.QueryMode.insensitive } },
+            { city: { contains: q, mode: Prisma.QueryMode.insensitive } },
+          ],
+        }
+      : {};
+
+  return prisma.business.findMany({
+    where,
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      city: true,
+      category: { select: { name: true } },
+      _count: { select: { reviews: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
 }
 
 export default async function ExplorerPage({
@@ -32,7 +50,10 @@ export default async function ExplorerPage({
 }: {
   searchParams?: { [key: string]: string | string[] | undefined };
 }) {
-  const search = typeof searchParams?.search === "string" ? searchParams.search : undefined;
+  const search =
+    typeof searchParams?.search === "string" && searchParams.search.trim().length > 0
+      ? searchParams.search.trim()
+      : undefined;
   const businesses = await getBusinesses(search);
 
   return (

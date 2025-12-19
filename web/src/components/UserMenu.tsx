@@ -74,10 +74,10 @@ function MenuLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
       href={href}
+      prefetch={false}
       className="block rounded-lg px-3 py-2 text-sm font-semibold text-slate-800 hover:bg-primary/5"
     >
       {label}
     </Link>
   );
 }
-

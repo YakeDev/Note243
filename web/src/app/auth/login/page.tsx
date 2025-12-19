@@ -66,14 +66,25 @@ export default function LoginPage() {
 
     try {
       router.refresh(); // force revalidation of server components (Header/menu)
-      const sessionRes = await fetch("/api/auth/session");
+      const sessionRes = await fetch("/api/auth/session", { cache: "no-store" });
       const session = await sessionRes.json();
       const role = session?.user?.role;
-      if (role === "ADMIN") router.push("/admin");
-      else if (role === "OWNER") router.push("/dashboard/owner");
-      else router.push("/explorer");
+      if (role === "ADMIN") {
+        router.push("/admin");
+        return;
+      }
+      if (role === "OWNER") {
+        router.push("/dashboard/owner");
+        return;
+      }
+      if (role) {
+        router.push("/explorer");
+        return;
+      }
+      // Pas de session retournée : on force une navigation plein page avec le callbackUrl
+      window.location.assign(callbackUrl || "/explorer");
     } catch {
-      router.push(callbackUrl || "/explorer");
+      window.location.assign(callbackUrl || "/explorer");
     }
   };
 
