@@ -10,7 +10,7 @@ export default async function OwnerEntryPage() {
   const role: Role = session?.user?.role as Role;
 
   if (!session?.user) {
-    redirect("/auth/login?next=/owner");
+    redirect("/auth/login?callbackUrl=/owner");
   }
 
   if (role === "OWNER") {

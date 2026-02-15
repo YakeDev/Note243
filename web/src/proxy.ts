@@ -17,7 +17,9 @@ export default async function proxy(req: NextRequest) {
     pathname.startsWith("/dashboard/admin") || pathname.startsWith("/dashboard/owner");
 
   if (!token && requireAuth) {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+    const loginUrl = new URL("/auth/login", req.url);
+    loginUrl.searchParams.set("callbackUrl", pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Protect admin dashboard
