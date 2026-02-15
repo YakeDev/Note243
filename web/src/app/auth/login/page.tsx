@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { loginSchema } from "@/lib/validators/auth";
 import { AuthShell } from "@/components/layouts/AuthShell";
 import { Button } from "@/components/ui/Button";
@@ -13,12 +13,16 @@ import { PasswordInput } from "@/components/ui/PasswordInput";
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/";
+  const nextParam = searchParams.get("next");
+  const callbackParam = searchParams.get("callbackUrl");
+  const callbackUrl = nextParam || callbackParam || "/";
+  const safeCallbackUrl = callbackUrl.startsWith("/auth/login") ? "/" : callbackUrl;
 
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [info, setInfo] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { data: session, status } = useSession();
 
   useEffect(() => {
     const verified = searchParams.get("verified");
@@ -30,6 +34,25 @@ export default function LoginPage() {
       });
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+
+    const role = session?.user?.role;
+    if (role === "ADMIN") {
+      router.replace("/admin");
+      return;
+    }
+    if (role === "OWNER") {
+      router.replace("/dashboard/owner");
+      return;
+    }
+    if (role) {
+      router.replace("/explorer");
+      return;
+    }
+    router.replace(safeCallbackUrl || "/explorer");
+  }, [router, safeCallbackUrl, session, status]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,9 +105,9 @@ export default function LoginPage() {
         return;
       }
       // Pas de session retournée : on force une navigation plein page avec le callbackUrl
-      window.location.assign(callbackUrl || "/explorer");
+      window.location.assign(safeCallbackUrl || "/explorer");
     } catch {
-      window.location.assign(callbackUrl || "/explorer");
+      window.location.assign(safeCallbackUrl || "/explorer");
     }
   };
 

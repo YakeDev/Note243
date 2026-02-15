@@ -8,7 +8,7 @@ export default async function AdminEntryPage() {
   const role: Role = session?.user?.role as Role;
 
   if (!session?.user) {
-    redirect("/auth/login?next=/admin");
+    redirect("/auth/login?callbackUrl=/admin");
   }
 
   if (role === "ADMIN") {

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export default async function OwnerLayout({ children }: { children: ReactNode }) {
   const session = await auth();
   if (!session?.user) {
-    redirect("/auth/login");
+    redirect("/auth/login?callbackUrl=/dashboard/owner");
   }
   if (session.user.role !== "OWNER" && session.user.role !== "ADMIN") {
     redirect("/");
