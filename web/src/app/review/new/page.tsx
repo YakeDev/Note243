@@ -13,6 +13,13 @@ import {
   CheckCircleIcon,
 } from "@/components/icons";
 import { cn } from "@/lib/utils";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type BusinessOption = {
   id: string;
@@ -21,6 +28,24 @@ type BusinessOption = {
 };
 
 type CategoryOption = { id: string; name: string; children?: { id: string; name: string }[] };
+
+const visitCategoryOptions = [
+  "Repas",
+  "Livraison",
+  "Achat",
+  "Consultation",
+  "Rendez-vous",
+  "Urgence",
+  "Service client",
+  "Reparation",
+  "Installation",
+  "Maintenance",
+  "Formation",
+  "Visite",
+  "Sejour",
+  "Location",
+  "Demande de devis",
+].map((label) => ({ value: label, label }));
 
 function StarsInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   return (
@@ -247,7 +272,9 @@ export default function NewReviewPage() {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [recommend, setRecommend] = useState(false);
-  const [categoryVisit, setCategoryVisit] = useState("Repas");
+  const [categoryVisit, setCategoryVisit] = useState(
+    visitCategoryOptions[0]?.value ?? "",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -486,17 +513,21 @@ export default function NewReviewPage() {
                   Catégorie de visite
                 </label>
                 <div className="relative">
-                  <select
-                    id="categoryVisit"
-                    value={categoryVisit}
-                    onChange={(e) => setCategoryVisit(e.target.value)}
-                    className="w-full appearance-none rounded-xl border border-slate-200 px-3 py-3 text-sm text-slate-900 shadow-sm focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  >
-                    <option>Repas</option>
-                    <option>Livraison</option>
-                    <option>Visite</option>
-                    <option>Service client</option>
-                  </select>
+                  <Select value={categoryVisit} onValueChange={setCategoryVisit}>
+                    <SelectTrigger
+                      id="categoryVisit"
+                      className="h-12 rounded-xl border-slate-200 px-3 py-3 text-sm text-slate-900 shadow-sm focus:ring-primary/20"
+                    >
+                      <SelectValue placeholder="S??lectionner" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {visitCategoryOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

@@ -8,6 +8,10 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export const dynamic = "force-dynamic";
 
+const PAGE_SIZE = 12;
+type SearchParams = Record<string, string | string[] | undefined>;
+type SearchParamsInput = SearchParams | Promise<SearchParams> | undefined;
+
 interface BusinessCard {
   id: string;
   name: string;
@@ -17,7 +21,36 @@ interface BusinessCard {
   _count?: { reviews: number };
 }
 
-async function getBusinesses(search?: string): Promise<BusinessCard[]> {
+type BusinessResults = {
+  items: BusinessCard[];
+  total: number;
+  totalPages: number;
+  page: number;
+};
+
+function getPaginationItems(
+  currentPage: number,
+  totalPages: number,
+): Array<number | "ellipsis"> {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const items: Array<number | "ellipsis"> = [1];
+  const left = Math.max(2, currentPage - 1);
+  const right = Math.min(totalPages - 1, currentPage + 1);
+
+  if (left > 2) items.push("ellipsis");
+  for (let page = left; page <= right; page += 1) {
+    items.push(page);
+  }
+  if (right < totalPages - 1) items.push("ellipsis");
+  items.push(totalPages);
+
+  return items;
+}
+
+async function getBusinesses(search?: string, page = 1): Promise<BusinessResults> {
   const q = search?.trim();
 
   const where: Prisma.BusinessWhereInput =
@@ -31,7 +64,11 @@ async function getBusinesses(search?: string): Promise<BusinessCard[]> {
         }
       : {};
 
-  return prisma.business.findMany({
+  const total = await prisma.business.count({ where });
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const safePage = totalPages > 0 ? Math.min(Math.max(page, 1), totalPages) : 1;
+
+  const items = await prisma.business.findMany({
     where,
     select: {
       id: true,
@@ -42,19 +79,47 @@ async function getBusinesses(search?: string): Promise<BusinessCard[]> {
       _count: { select: { reviews: true } },
     },
     orderBy: { createdAt: "desc" },
+    skip: (safePage - 1) * PAGE_SIZE,
+    take: PAGE_SIZE,
   });
+
+  return { items, total, totalPages, page: safePage };
 }
 
 export default async function ExplorerPage({
   searchParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined };
+  searchParams?: SearchParamsInput;
 }) {
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as Promise<SearchParams>).then === "function"
+      ? await (searchParams as Promise<SearchParams>)
+      : (searchParams as SearchParams | undefined);
+
   const search =
-    typeof searchParams?.search === "string" && searchParams.search.trim().length > 0
-      ? searchParams.search.trim()
+    typeof resolvedSearchParams?.search === "string" &&
+    resolvedSearchParams.search.trim().length > 0
+      ? resolvedSearchParams.search.trim()
       : undefined;
-  const businesses = await getBusinesses(search);
+
+  const pageParam =
+    typeof resolvedSearchParams?.page === "string" ? resolvedSearchParams.page : undefined;
+  const parsedPage = pageParam ? Number.parseInt(pageParam, 10) : 1;
+  const currentPage = Number.isFinite(parsedPage) && parsedPage > 0 ? parsedPage : 1;
+
+  const { items: businesses, totalPages, page: safePage } = await getBusinesses(
+    search,
+    currentPage,
+  );
+  const pageItems = totalPages > 1 ? getPaginationItems(safePage, totalPages) : [];
+
+  const buildPageUrl = (page: number) => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (page > 1) params.set("page", String(page));
+    const query = params.toString();
+    return query ? `/explorer?${query}` : "/explorer";
+  };
 
   return (
     <PageShell className="space-y-8 py-12" width="xl">
@@ -121,6 +186,60 @@ export default async function ExplorerPage({
           </Card>
         ))}
       </div>
+
+      {totalPages > 1 && (
+        <nav
+          className="flex flex-wrap items-center justify-center gap-2"
+          aria-label="Pagination"
+        >
+          {safePage > 1 ? (
+            <Link
+              href={buildPageUrl(safePage - 1)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary"
+            >
+              Precedent
+            </Link>
+          ) : (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-400">
+              Precedent
+            </span>
+          )}
+
+          {pageItems.map((item, index) =>
+            item === "ellipsis" ? (
+              <span key={`ellipsis-${index}`} className="px-2 text-sm text-slate-400">
+                ...
+              </span>
+            ) : (
+              <Link
+                key={item}
+                href={buildPageUrl(item)}
+                className={
+                  item === safePage
+                    ? "rounded-full border border-primary bg-primary px-4 py-2 text-sm font-semibold text-white"
+                    : "rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary"
+                }
+                aria-current={item === safePage ? "page" : undefined}
+              >
+                {item}
+              </Link>
+            ),
+          )}
+
+          {safePage < totalPages ? (
+            <Link
+              href={buildPageUrl(safePage + 1)}
+              className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-primary hover:text-primary"
+            >
+              Suivant
+            </Link>
+          ) : (
+            <span className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-semibold text-slate-400">
+              Suivant
+            </span>
+          )}
+        </nav>
+      )}
     </PageShell>
   );
 }
