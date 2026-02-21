@@ -46,6 +46,11 @@ export async function GET(request: Request) {
       include: {
         category: { select: { id: true, name: true, slug: true } },
         owner: { select: { id: true, name: true, email: true } },
+        images: {
+          select: { url: true, isCover: true },
+          orderBy: [{ isCover: "desc" }, { createdAt: "desc" }],
+          take: 1,
+        },
         _count: { select: { reviews: true, favorites: true, claims: true } },
       },
       orderBy: { createdAt: "desc" },

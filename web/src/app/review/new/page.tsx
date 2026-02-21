@@ -25,6 +25,7 @@ type BusinessOption = {
   id: string;
   name: string;
   category?: { name: string };
+  images?: { url: string; isCover: boolean }[];
 };
 
 type CategoryOption = { id: string; name: string; children?: { id: string; name: string }[] };
@@ -312,6 +313,7 @@ export default function NewReviewPage() {
     () => businesses.find((b) => b.id === businessId),
     [businesses, businessId],
   );
+  const selectedImage = selected?.images?.[0]?.url || mockBusiness.image;
 
   const selectBusiness = (biz: BusinessOption) => {
     setBusinessId(biz.id);
@@ -560,8 +562,8 @@ export default function NewReviewPage() {
             <p className="text-sm font-semibold text-slate-900">Établissement</p>
             <div className="mt-3 overflow-hidden rounded-xl border border-slate-100">
               <img
-                src={mockBusiness.image}
-                alt={mockBusiness.title}
+                src={selectedImage}
+                alt={selected?.name ?? mockBusiness.title}
                 className="h-32 w-full object-cover"
                 loading="lazy"
               />
