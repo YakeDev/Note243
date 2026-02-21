@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 // Ensure env vars are loaded when Prisma reads this config (CLI does not auto-load .env here).
 dotenv.config({ path: "./.env" });
 
-const databaseUrl = process.env.DATABASE_URL;
+const databaseUrl = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 const shadowDatabaseUrl = process.env.DIRECT_URL;
 
 if (!databaseUrl) {
