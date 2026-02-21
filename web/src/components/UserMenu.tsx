@@ -10,6 +10,12 @@ type User = Session["user"];
 const roleDashboard = (role?: string | null) =>
   role === "ADMIN" ? "/dashboard/admin" : role === "OWNER" ? "/dashboard/owner" : "/dashboard";
 
+const roleProfile = (role?: string | null) =>
+  role === "ADMIN" ? "/dashboard/admin/profile" : "/profile";
+
+const roleSettings = (role?: string | null) =>
+  role === "ADMIN" ? "/dashboard/admin/settings" : "/dashboard/settings";
+
 function getBaseUrl() {
   if (typeof window !== "undefined") return window.location.origin;
   if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
@@ -53,8 +59,8 @@ export function UserMenu({ user }: { user: User }) {
           </div>
           <div className="my-1 h-px bg-slate-200" />
           <MenuLink href={roleDashboard(user?.role)} label="Tableau de bord" />
-          <MenuLink href="/profile" label="Profil" />
-          <MenuLink href="/settings" label="Parametres" />
+          <MenuLink href={roleProfile(user?.role)} label="Profil" />
+          <MenuLink href={roleSettings(user?.role)} label="Parametres" />
           <MenuLink href="/help" label="Aide" />
           <div className="my-1 h-px bg-slate-200" />
           <button
