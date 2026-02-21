@@ -3,7 +3,9 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-export function ClaimActions({ id }: { id: string }) {
+type ClaimStatus = "PENDING" | "APPROVED" | "REJECTED";
+
+export function ClaimActions({ id, status }: { id: string; status: ClaimStatus }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
 
@@ -12,15 +14,16 @@ export function ClaimActions({ id }: { id: string }) {
       let url = "";
       if (status === "APPROVED") url = `/api/claims/${id}/approve`;
       else if (status === "REJECTED") url = `/api/claims/${id}/reject`;
-      else url = "/api/admin/claims";
+      else url = `/api/claims/${id}/pending`;
 
-      const res =
-        status === "PENDING"
-          ? await fetch(url)
-          : await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" } });
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
       if (!res.ok) {
-        alert("Impossible de mettre a jour la revendication.");
+        const payload = await res.json().catch(() => ({}));
+        alert(payload?.error || "Impossible de mettre a jour la revendication.");
         return;
       }
       router.refresh();
@@ -32,7 +35,7 @@ export function ClaimActions({ id }: { id: string }) {
       <button
         type="button"
         onClick={() => update("APPROVED")}
-        disabled={pending}
+        disabled={pending || status !== "PENDING"}
         className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1 text-sm font-semibold text-emerald-700 hover:border-emerald-300 disabled:opacity-60"
       >
         Approuver
@@ -40,7 +43,7 @@ export function ClaimActions({ id }: { id: string }) {
       <button
         type="button"
         onClick={() => update("REJECTED")}
-        disabled={pending}
+        disabled={pending || status !== "PENDING"}
         className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1 text-sm font-semibold text-rose-700 hover:border-rose-300 disabled:opacity-60"
       >
         Refuser
@@ -48,7 +51,7 @@ export function ClaimActions({ id }: { id: string }) {
       <button
         type="button"
         onClick={() => update("PENDING")}
-        disabled={pending}
+        disabled={pending || status === "PENDING"}
         className="rounded-lg border border-slate-200 px-3 py-1 text-sm font-semibold text-slate-800 hover:border-primary hover:text-primary disabled:opacity-60"
       >
         Remettre en attente

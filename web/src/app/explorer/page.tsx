@@ -19,6 +19,7 @@ interface BusinessCard {
   city?: string | null;
   category?: { name: string };
   _count?: { reviews: number };
+  images?: { url: string; isCover: boolean }[];
 }
 
 type BusinessResults = {
@@ -77,6 +78,11 @@ async function getBusinesses(search?: string, page = 1): Promise<BusinessResults
       city: true,
       category: { select: { name: true } },
       _count: { select: { reviews: true } },
+      images: {
+        select: { url: true, isCover: true },
+        orderBy: [{ isCover: "desc" }, { createdAt: "desc" }],
+        take: 1,
+      },
     },
     orderBy: { createdAt: "desc" },
     skip: (safePage - 1) * PAGE_SIZE,
@@ -163,7 +169,15 @@ export default async function ExplorerPage({
             key={biz.id}
             className="flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
-            <div className="h-32 w-full bg-gradient-to-r from-primary/10 to-primary/5" />
+            <div className="relative h-32 w-full bg-gradient-to-r from-primary/10 to-primary/5">
+              {biz.images?.[0]?.url ? (
+                <img
+                  src={biz.images[0].url}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+              ) : null}
+            </div>
             <CardContent className="flex flex-1 flex-col gap-2 p-4">
               <div className="flex items-center justify-between text-xs font-semibold text-slate-600">
                 <span>{biz.category?.name ?? "Catégorie"}</span>

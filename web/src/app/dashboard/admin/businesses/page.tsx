@@ -64,6 +64,12 @@ export default async function AdminBusinessesPage() {
                     >
                       Ouvrir
                     </Link>
+                    <Link
+                      href={`/dashboard/admin/businesses/${biz.id}`}
+                      className="text-sm font-semibold text-slate-600 hover:underline"
+                    >
+                      Images
+                    </Link>
                     <BusinessDeleteButton id={biz.id} name={biz.name} />
                   </div>
                 </td>

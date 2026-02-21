@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ReviewStatus } from "@prisma/client";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
   CheckCircleIcon,
@@ -9,6 +10,7 @@ import {
   PhoneIcon,
   StarIcon,
 } from "@/components/icons";
+import { ClaimBusinessDialog } from "@/components/ClaimBusinessDialog";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -85,6 +87,21 @@ export default async function BusinessPage({ params }: Props) {
   if (!data) return notFound();
 
   const { business, stats } = data;
+  const session = await auth();
+  const userId = session?.user?.id ?? null;
+  const isBusinessOwner = !!userId && business.ownerId === userId;
+  const isOwnerAccount = session?.user?.role === "OWNER";
+  const canClaim = business.status === "ACTIVE" && isOwnerAccount;
+
+  let claimStatus: "PENDING" | "APPROVED" | "REJECTED" | null = null;
+  if (userId) {
+    const claim = await prisma.claim.findFirst({
+      where: { businessId: business.id, userId },
+      orderBy: { createdAt: "desc" },
+      select: { status: true },
+    });
+    claimStatus = claim?.status ?? null;
+  }
   const coverImage =
     business.images.find((img) => img.isCover)?.url ||
     business.images[0]?.url ||
@@ -273,6 +290,56 @@ export default async function BusinessPage({ params }: Props) {
               </div>
               <div className="mt-6 rounded-xl bg-primary/10 px-4 py-3 text-sm text-primary">
                 Contactez l'équipe Note243 pour mettre à jour cette fiche ou ajouter des horaires.
+              </div>
+            </div>
+
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <h2 className="text-lg font-semibold text-slate-900">Proprietaire</h2>
+              <div className="mt-4 text-sm text-slate-700">
+                {business.owner ? (
+                  <p>
+                    Fiche revendiquee par{" "}
+                    <span className="font-semibold text-slate-900">
+                      {business.owner.name ?? "Proprietaire"}
+                    </span>
+                    .
+                  </p>
+                ) : (
+                  <p>Aucun proprietaire associe pour le moment.</p>
+                )}
+              </div>
+
+              <div className="mt-4 space-y-2">
+                {isBusinessOwner ? (
+                  <p className="text-xs font-semibold text-emerald-600">
+                    Vous etes proprietaire de cette fiche.
+                  </p>
+                ) : null}
+                {!isBusinessOwner ? (
+                  !session?.user ? (
+                    <Link
+                      href={`/auth/login?callbackUrl=/business/${business.id}`}
+                      className="inline-flex w-full items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90"
+                    >
+                      Se connecter pour revendiquer
+                    </Link>
+                  ) : !isOwnerAccount ? (
+                    <p className="text-xs text-slate-600">
+                      Le compte proprietaire est requis pour revendiquer une fiche. Contactez un
+                      administrateur pour convertir votre compte.
+                    </p>
+                  ) : canClaim ? (
+                    <ClaimBusinessDialog
+                      businessId={business.id}
+                      businessName={business.name}
+                      initialStatus={claimStatus}
+                    />
+                  ) : (
+                    <p className="text-xs text-slate-500">
+                      La revendication est indisponible pour cette fiche.
+                    </p>
+                  )
+                ) : null}
               </div>
             </div>
           </aside>

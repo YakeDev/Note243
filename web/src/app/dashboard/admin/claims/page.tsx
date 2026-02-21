@@ -65,7 +65,7 @@ export default async function AdminClaimsPage() {
                 )}
                 {claim.message && <p className="mt-2 text-sm text-slate-800">{claim.message}</p>}
               </div>
-              <ClaimActions id={claim.id} />
+              <ClaimActions id={claim.id} status={claim.status} />
             </div>
           </div>
         ))}
