@@ -51,3 +51,6 @@ web/node_modules/
 # IDE
 **/.idea/
 **/.vscode/
+
+.vercel
+.env*.local

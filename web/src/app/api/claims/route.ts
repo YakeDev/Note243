@@ -83,7 +83,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Etablissement introuvable ou inactif" }, { status: 404 });
   }
 
-  let proofUrl = parsed.data.proofUrl;
+  let finalProofUrl = parsed.data.proofUrl;
   const proofFile = form.get("proofFile");
 
   if (proofFile instanceof File && proofFile.size > 0) {
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: upload.error.message }, { status: 500 });
     }
 
-    proofUrl = publicUrl(path);
+    finalProofUrl = publicUrl(path);
   }
 
   const claim = await prisma.claim.create({
@@ -123,7 +123,7 @@ export async function POST(request: Request) {
       businessId: parsed.data.businessId,
       userId: session.user.id as string,
       message: parsed.data.message,
-      proofUrl,
+      proofUrl: finalProofUrl,
       notes: parsed.data.notes,
       status: "PENDING",
     },
