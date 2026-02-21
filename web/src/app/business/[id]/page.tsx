@@ -397,6 +397,14 @@ export default async function BusinessPage({ params }: Props) {
                     </div>
                   </div>
                   <p className="mt-3 text-sm leading-6 text-slate-700">{review.comment}</p>
+                  {review.ownerReply ? (
+                    <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-emerald-800">
+                        Reponse du proprietaire
+                      </p>
+                      <p className="mt-2 whitespace-pre-wrap">{review.ownerReply}</p>
+                    </div>
+                  ) : null}
                   <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-slate-500">
                     <button className="hover:text-primary">Signaler</button>
                     <button className="hover:text-primary">Répondre</button>

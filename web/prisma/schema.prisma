@@ -109,6 +109,8 @@ model Review {
   id         String    @id @default(uuid())
   rating     Int
   comment    String
+  ownerReply String?
+  ownerRepliedAt DateTime?
   userId     String
   businessId String
   status     ReviewStatus @default(PUBLISHED)

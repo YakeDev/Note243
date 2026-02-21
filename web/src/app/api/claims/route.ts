@@ -58,13 +58,13 @@ export async function POST(request: Request) {
 
   const businessId = String(form.get("businessId") ?? "");
   const message = String(form.get("message") ?? "").trim();
-  const proofUrl = String(form.get("proofUrl") ?? "").trim();
+  const proofUrlInput = String(form.get("proofUrl") ?? "").trim();
   const notes = String(form.get("notes") ?? "").trim();
 
   const payload = {
     businessId,
     message: message || undefined,
-    proofUrl,
+    proofUrl: proofUrlInput,
     notes: notes || undefined,
   };
 

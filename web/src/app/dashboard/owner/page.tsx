@@ -5,6 +5,7 @@ import { DashboardShell } from "@/components/layouts/Shell";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BusinessForm } from "./BusinessForm";
+import { ReviewReplyForm } from "@/components/ReviewReplyForm";
 
 export const dynamic = "force-dynamic";
 
@@ -146,6 +147,13 @@ export default async function OwnerDashboardPage() {
                     Note : {rev.rating}/5 · Par {rev.user?.name ?? "Utilisateur"}
                   </p>
                   <p className="mt-1 text-sm text-slate-700 line-clamp-3">{rev.comment}</p>
+                  {rev.ownerReply ? (
+                    <div className="mt-3 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                      <p className="font-semibold text-emerald-800">Votre reponse</p>
+                      <p className="mt-1 whitespace-pre-wrap">{rev.ownerReply}</p>
+                    </div>
+                  ) : null}
+                  <ReviewReplyForm reviewId={rev.id} initialReply={rev.ownerReply} />
                   <div className="mt-2 flex items-center gap-3 text-xs text-primary">
                     <Link href={`/business/${rev.business?.id ?? ""}#reviews`}>Voir la fiche</Link>
                     <Link href={`/review/new?businessId=${rev.business?.id ?? ""}`}>
