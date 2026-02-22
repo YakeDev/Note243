@@ -52,7 +52,7 @@ export const authConfig: NextAuthConfig = {
         const authUser = user as AdapterUser & { role?: UserRole | null; status?: UserStatus };
         token.role = authUser.role ?? null;
         token.id = authUser.id;
-        token.status = authUser.status ?? null;
+        token.status = authUser.status ?? undefined;
       }
 
       if (typeof token.id === "string") {
@@ -63,7 +63,7 @@ export const authConfig: NextAuthConfig = {
 
         if (!dbUser) {
           token.id = undefined;
-          token.role = null;
+          token.role = undefined;
           token.status = UserStatus.SUSPENDED;
         } else {
           token.role = dbUser.role;
@@ -82,7 +82,7 @@ export const authConfig: NextAuthConfig = {
         session.user.role =
           (token.role as UserRole | null | undefined) ?? session.user.role ?? null;
         session.user.status =
-          (token.status as UserStatus | null | undefined) ?? session.user.status ?? null;
+          (token.status as UserStatus | undefined) ?? session.user.status ?? undefined;
       }
       return session;
     },

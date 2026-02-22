@@ -10,6 +10,7 @@ export async function POST(
   if (!session?.user || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Acces refuse" }, { status: 401 });
   }
+  const adminId = session.user.id as string;
 
   const { id } = await params;
 
@@ -28,7 +29,7 @@ export async function POST(
       data: {
         status: "APPROVED",
         reviewedAt: new Date(),
-        reviewedById: session.user.id as string,
+        reviewedById: adminId,
         rejectReason: null,
       },
     });
