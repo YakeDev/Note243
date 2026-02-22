@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ReviewStatus } from "@prisma/client";
+import { BusinessStatus, ReviewStatus } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -88,9 +88,17 @@ export default async function BusinessPage({ params }: Props) {
 
   const { business, stats } = data;
   const session = await auth();
+  const isAdmin = session?.user?.role === "ADMIN";
   const userId = session?.user?.id ?? null;
   const isBusinessOwner = !!userId && business.ownerId === userId;
   const isOwnerAccount = session?.user?.role === "OWNER";
+
+  const isPublicBusiness =
+    business.status === BusinessStatus.ACTIVE ||
+    business.status === BusinessStatus.CERTIFIED;
+  if (!isPublicBusiness && !isAdmin && !isBusinessOwner) {
+    return notFound();
+  }
   const canClaim = business.status === "ACTIVE" && isOwnerAccount;
 
   let claimStatus: "PENDING" | "APPROVED" | "REJECTED" | null = null;
@@ -112,7 +120,7 @@ export default async function BusinessPage({ params }: Props) {
   const mapQuery = encodeURIComponent(locationLabel || business.name);
   const mapEmbedUrl = `https://www.google.com/maps?q=${mapQuery}&output=embed`;
   const mapLink = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
-  const isCertified = business.status === "CERTIFIED";
+  const isCertified = business.status === BusinessStatus.CERTIFIED;
 
   return (
     <div className="bg-white">

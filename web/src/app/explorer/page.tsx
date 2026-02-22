@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Prisma } from "@prisma/client";
+import { BusinessStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PageShell, SectionHeader } from "@/components/layouts/Shell";
 import { Badge } from "@/components/ui/badge";
@@ -54,8 +54,9 @@ function getPaginationItems(
 async function getBusinesses(search?: string, page = 1): Promise<BusinessResults> {
   const q = search?.trim();
 
-  const where: Prisma.BusinessWhereInput =
-    q && q.length > 0
+  const where: Prisma.BusinessWhereInput = {
+    status: { in: [BusinessStatus.ACTIVE, BusinessStatus.CERTIFIED] },
+    ...(q && q.length > 0
       ? {
           OR: [
             { name: { contains: q, mode: Prisma.QueryMode.insensitive } },
@@ -63,7 +64,8 @@ async function getBusinesses(search?: string, page = 1): Promise<BusinessResults
             { city: { contains: q, mode: Prisma.QueryMode.insensitive } },
           ],
         }
-      : {};
+      : {}),
+  };
 
   const total = await prisma.business.count({ where });
   const totalPages = Math.ceil(total / PAGE_SIZE);

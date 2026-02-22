@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { reviewSchema } from "@/lib/validators/review";
+import { reviewUpdateSchema } from "@/lib/validators/review";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -15,7 +15,7 @@ export async function PATCH(request: Request, { params }: Params) {
   const { id } = await params;
 
   const body = await request.json().catch(() => null);
-  const parsed = reviewSchema.partial().safeParse(body);
+  const parsed = reviewUpdateSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 400 });

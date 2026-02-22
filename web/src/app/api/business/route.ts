@@ -7,15 +7,20 @@ import { businessSchema } from "@/lib/validators/business";
 // GET /api/business?search=&categoryId=
 export async function GET(request: Request) {
   try {
+    const session = await auth();
+    const isAdmin = session?.user?.role === "ADMIN";
     const { searchParams } = new URL(request.url);
     const searchRaw = searchParams.get("search")?.trim();
     const search = searchRaw && searchRaw.length > 0 ? searchRaw : undefined;
     const categoryIdRaw = searchParams.get("categoryId")?.trim();
     const categoryId = categoryIdRaw && categoryIdRaw.length > 0 ? categoryIdRaw : undefined;
     const statusParam = searchParams.get("status");
-    const status = statusParam && Object.values(BusinessStatus).includes(statusParam as BusinessStatus)
-      ? (statusParam as BusinessStatus)
-      : undefined;
+    const status =
+      isAdmin &&
+      statusParam &&
+      Object.values(BusinessStatus).includes(statusParam as BusinessStatus)
+        ? (statusParam as BusinessStatus)
+        : undefined;
     const q = search;
 
     let categoryIds: string[] | undefined;
@@ -28,7 +33,11 @@ export async function GET(request: Request) {
     }
 
     const where: Prisma.BusinessWhereInput = {
-      ...(status ? { status } : {}),
+      ...(isAdmin
+        ? status
+          ? { status }
+          : {}
+        : { status: { in: [BusinessStatus.ACTIVE, BusinessStatus.CERTIFIED] } }),
       ...(categoryIds ? { categoryId: { in: categoryIds } } : {}),
       ...(q
         ? {
@@ -88,9 +97,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const payload = { ...parsed.data };
+    const payload = { ...parsed.data } as typeof parsed.data & { status?: BusinessStatus };
     if (session.user.role === "OWNER") {
       payload.ownerId = session.user.id;
+      payload.status = BusinessStatus.PENDING_REVIEW;
     }
 
     const business = await prisma.business.create({ data: payload });

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { BusinessStatus, ReviewStatus } from "@prisma/client";
 import { auth } from "@/auth";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { reviewSchema } from "@/lib/validators/review";
+import { reviewCreateSchema } from "@/lib/validators/review";
 
 const businessIdSchema = z.string().uuid();
 
@@ -10,7 +11,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const businessId = searchParams.get("businessId");
 
-  const where: { businessId?: string } = {};
+  const where: {
+    businessId?: string;
+    status?: ReviewStatus;
+    business?: { status: { in: BusinessStatus[] } };
+  } = {
+    status: ReviewStatus.PUBLISHED,
+    business: { status: { in: [BusinessStatus.ACTIVE, BusinessStatus.CERTIFIED] } },
+  };
 
   if (businessId) {
     const parsedBusinessId = businessIdSchema.safeParse(businessId);
@@ -33,7 +41,7 @@ export async function GET(request: Request) {
     const reviews = await prisma.review.findMany({
       where,
       include: {
-        user: { select: { id: true, name: true, email: true } },
+        user: { select: { id: true, name: true } },
         business: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -54,7 +62,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => null);
-  const parsed = reviewSchema.safeParse(body);
+  const parsed = reviewCreateSchema.safeParse(body);
 
   if (!parsed.success) {
     return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 400 });
@@ -65,7 +73,11 @@ export async function POST(request: Request) {
 
   try {
     const business = await prisma.business.findUnique({ where: { id: businessId } });
-    if (!business) {
+    if (
+      !business ||
+      (business.status !== BusinessStatus.ACTIVE &&
+        business.status !== BusinessStatus.CERTIFIED)
+    ) {
       return NextResponse.json({ message: "Business not found" }, { status: 404 });
     }
 

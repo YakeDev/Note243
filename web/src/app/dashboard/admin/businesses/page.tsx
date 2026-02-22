@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { BusinessStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { BusinessDeleteButton } from "./BusinessDeleteButton";
+import { BusinessStatusActions } from "./BusinessStatusActions";
 
 export const dynamic = "force-dynamic";
 
-async function getBusinesses() {
+async function getBusinesses(status?: BusinessStatus) {
   return prisma.business.findMany({
+    where: status ? { status } : undefined,
     orderBy: { createdAt: "desc" },
     include: {
       category: { select: { id: true, name: true } },
@@ -15,8 +18,20 @@ async function getBusinesses() {
   });
 }
 
-export default async function AdminBusinessesPage() {
-  const businesses = await getBusinesses();
+export default async function AdminBusinessesPage({
+  searchParams,
+}: {
+  searchParams?: Record<string, string | string[] | undefined>;
+}) {
+  const statusParam =
+    typeof searchParams?.status === "string" ? searchParams.status : undefined;
+  const status =
+    statusParam && Object.values(BusinessStatus).includes(statusParam as BusinessStatus)
+      ? (statusParam as BusinessStatus)
+      : undefined;
+  const pendingActive = status === BusinessStatus.PENDING_REVIEW;
+
+  const businesses = await getBusinesses(status);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
@@ -27,6 +42,28 @@ export default async function AdminBusinessesPage() {
           <p className="text-sm text-slate-600">
             Créez, modifiez ou supprimez les fiches et suivez les avis associés.
           </p>
+          <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold">
+            <Link
+              href="/dashboard/admin/businesses"
+              className={`rounded-full border px-3 py-1 ${
+                !pendingActive
+                  ? "border-primary bg-primary text-white"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-primary hover:text-primary"
+              }`}
+            >
+              Tous
+            </Link>
+            <Link
+              href="/dashboard/admin/businesses?status=PENDING_REVIEW"
+              className={`rounded-full border px-3 py-1 ${
+                pendingActive
+                  ? "border-amber-300 bg-amber-100 text-amber-900"
+                  : "border-slate-200 bg-white text-slate-600 hover:border-amber-300 hover:text-amber-700"
+              }`}
+            >
+              En attente
+            </Link>
+          </div>
         </div>
         <Link
           href="/explorer"
@@ -44,6 +81,7 @@ export default async function AdminBusinessesPage() {
               <th className="px-4 py-3">Catégorie</th>
               <th className="px-4 py-3">Propriétaire</th>
               <th className="px-4 py-3">Avis</th>
+              <th className="px-4 py-3">Statut</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -56,6 +94,9 @@ export default async function AdminBusinessesPage() {
                   {biz.owner ? `${biz.owner.name ?? ""} (${biz.owner.email})` : "-"}
                 </td>
                 <td className="px-4 py-3 text-slate-600">{biz._count?.reviews ?? 0}</td>
+                <td className="px-4 py-3">
+                  <BusinessStatusActions id={biz.id} status={biz.status} />
+                </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center justify-end gap-3">
                     <Link

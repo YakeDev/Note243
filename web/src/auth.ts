@@ -2,7 +2,7 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import type { AdapterUser } from "next-auth/adapters";
 import type { JWT } from "next-auth/jwt";
-import { UserRole } from "@prisma/client";
+import { UserRole, UserStatus } from "@prisma/client";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { type Adapter } from "@auth/core/adapters";
@@ -49,17 +49,40 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        const authUser = user as AdapterUser & { role?: UserRole | null };
+        const authUser = user as AdapterUser & { role?: UserRole | null; status?: UserStatus };
         token.role = authUser.role ?? null;
         token.id = authUser.id;
+        token.status = authUser.status ?? null;
+      }
+
+      if (typeof token.id === "string") {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { role: true, status: true },
+        });
+
+        if (!dbUser) {
+          token.id = undefined;
+          token.role = null;
+          token.status = UserStatus.SUSPENDED;
+        } else {
+          token.role = dbUser.role;
+          token.status = dbUser.status;
+        }
       }
       return token as JWT;
     },
     async session({ session, token }) {
+      if (token.status === UserStatus.SUSPENDED) {
+        return { ...session, user: undefined };
+      }
+
       if (session.user) {
         session.user.id = typeof token.id === "string" ? token.id : session.user.id;
         session.user.role =
           (token.role as UserRole | null | undefined) ?? session.user.role ?? null;
+        session.user.status =
+          (token.status as UserStatus | null | undefined) ?? session.user.status ?? null;
       }
       return session;
     },

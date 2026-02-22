@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const { name, email, password, accountType } = parsed.data;
+    const { name, email, password } = parsed.data;
     const normalizedEmail = email.toLowerCase();
 
     const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
@@ -73,7 +73,8 @@ export async function POST(request: Request) {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const role = accountType === "OWNER" ? "OWNER" : "USER";
+    // Owners must be granted by admin after verification.
+    const role = "USER";
 
     const user = await prisma.user.create({
       data: {

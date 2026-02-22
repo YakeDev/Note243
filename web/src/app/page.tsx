@@ -1,6 +1,6 @@
 import type { ComponentType, SVGProps } from "react";
 import Link from "next/link";
-import { Prisma, ReviewStatus } from "@prisma/client";
+import { BusinessStatus, Prisma, ReviewStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { PageShell, SectionHeader } from "@/components/layouts/Shell";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +117,10 @@ function parseSearchParams(searchParams: SearchParams | undefined): Filters {
 
 function buildWhere(filters: Filters): Prisma.BusinessWhereInput {
   const conditions: Prisma.BusinessWhereInput[] = [];
+
+  conditions.push({
+    status: { in: [BusinessStatus.ACTIVE, BusinessStatus.CERTIFIED] },
+  });
 
   if (filters.q) {
     const mode = Prisma.QueryMode.insensitive;

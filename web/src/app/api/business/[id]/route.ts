@@ -1,4 +1,4 @@
-import { Prisma } from "@prisma/client";
+import { BusinessStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
@@ -15,12 +15,24 @@ const businessInclude = {
 export async function GET(_: Request, { params }: Params) {
   try {
     const { id } = await params;
+    const session = await auth();
+    const isAdmin = session?.user?.role === "ADMIN";
     const business = await prisma.business.findUnique({
       where: { id },
       include: businessInclude,
     });
 
     if (!business) {
+      return NextResponse.json({ message: "Business not found" }, { status: 404 });
+    }
+
+    const isOwner =
+      !!session?.user?.id && business.ownerId && business.ownerId === session.user.id;
+    const isPublic =
+      business.status === BusinessStatus.ACTIVE ||
+      business.status === BusinessStatus.CERTIFIED;
+
+    if (!isPublic && !isAdmin && !isOwner) {
       return NextResponse.json({ message: "Business not found" }, { status: 404 });
     }
 
